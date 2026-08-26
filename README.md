@@ -28,7 +28,7 @@ archivos del colegio  ──▶  Cloud Storage  ──▶  Cloud Function (Pytho
 | `public/index.html` | El informe: es a la vez la app y la plantilla que rellena el backend. |
 | `public/app.js` | Conecta el Paso 1 con Storage y con la función de ingesta. |
 | `scripts/ingesta_local.py` | Corre la ingesta sin Firebase, para depurar planillas. |
-| `tests/` | 80 tests, incluida la reconstrucción completa del informe 4° A. |
+| `tests/` | 82 tests, incluida la reconstrucción completa del informe 4° A. |
 
 ## Empezar
 
@@ -140,7 +140,7 @@ Requiere un proyecto de Firebase con Blaze (las funciones de 2ª generación lo
 exigen) y `firebase-tools`.
 
 ```bash
-firebase use --add                  # elegir el proyecto; deja el alias en .firebaserc
+firebase use jumpmathv2             # ya está como alias por defecto en .firebaserc
 firebase deploy --only firestore:rules,storage:rules
 firebase deploy --only functions
 firebase deploy --only hosting
@@ -150,10 +150,23 @@ firebase deploy --only hosting
 (`scripts/sync_plantilla.sh`), porque el despliegue sólo empaqueta ese
 directorio. `public/index.html` es la única copia versionada.
 
-Para el frontend, copie `public/firebase-config.example.js` a
-`public/firebase-config.js` y complete los valores del proyecto. **Sin ese
-archivo el informe sigue funcionando solo**, con los datos de ejemplo y el
-Paso 1 como maqueta: es la condición de la guía §1 y conviene no romperla.
+El frontend ya apunta al proyecto **`jumpmathv2`** en
+`public/firebase-config.js`. Esos valores son públicos por diseño —viajan al
+navegador en cualquier app web de Firebase e identifican el proyecto, no
+autorizan nada—, así que el archivo se versiona; lo que protege los datos son
+las reglas de Firestore y Storage. Para apuntar a otro proyecto (uno de
+pruebas, por ejemplo) está `public/firebase-config.example.js`.
+
+**Sin `firebase-config.js` el informe sigue funcionando solo**, con los datos
+de ejemplo y el Paso 1 como maqueta: es la condición de la guía §1 y conviene
+no romperla.
+
+El SDK se carga como módulo ES desde `gstatic.com`, no desde npm: no hay paso
+de build en este proyecto, así que `import { initializeApp } from "firebase/app"`
+—que necesita un bundler— no funcionaría. `public/app.js` importa la misma
+librería por URL. Dos tests comprueban que la región y el proyecto del cliente
+no se separen de los del backend, porque ese desajuste no se ve al desplegar:
+falla recién al usarlo.
 
 En local, con el emulador:
 

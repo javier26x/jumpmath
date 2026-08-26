@@ -27,9 +27,11 @@ def main(monkeypatch_module):
 
     monkeypatch_module.setenv(
         "FIREBASE_CONFIG",
-        json.dumps({"projectId": "jumpmath-dia", "storageBucket": "jumpmath-dia.appspot.com"}),
+        json.dumps(
+            {"projectId": "jumpmathv2", "storageBucket": "jumpmathv2.firebasestorage.app"}
+        ),
     )
-    monkeypatch_module.setenv("GCLOUD_PROJECT", "jumpmath-dia")
+    monkeypatch_module.setenv("GCLOUD_PROJECT", "jumpmathv2")
     monkeypatch_module.setattr(firebase_admin, "initialize_app", lambda *_a, **_k: None)
     sys.modules.pop("main", None)
     import main as modulo
@@ -86,3 +88,32 @@ def test_sin_sesion_no_hay_ingesta(main):
 
 def test_ruta_de_storage_queda_bajo_el_uid(main):
     assert main._ruta("uid123", "1886-4a", "dia_oficial") == "cursos/uid123/1886-4a/dia_oficial"
+
+
+# --- Coherencia entre el cliente y el backend ----------------------------
+
+
+def _config_del_cliente() -> dict[str, str]:
+    """Lee los literales de `public/firebase-config.js` sin ejecutar JS."""
+    import re
+
+    from tests.conftest import RAIZ
+
+    fuente = (RAIZ / "public" / "firebase-config.js").read_text(encoding="utf-8")
+    # Capta tanto las propiedades del objeto (`projectId: "…"`) como las
+    # constantes exportadas sueltas (`export const region = "…"`).
+    return dict(re.findall(r'(\w+)\s*[:=]\s*"([^"]+)"', fuente))
+
+
+def test_la_region_del_cliente_coincide_con_la_de_las_funciones(main):
+    """Un desajuste de región no se ve al desplegar: falla con NOT_FOUND en uso."""
+    assert _config_del_cliente().get("region") == main.REGION
+
+
+def test_el_proyecto_del_cliente_coincide_con_firebaserc():
+    import json
+
+    from tests.conftest import RAIZ
+
+    alias = json.loads((RAIZ / ".firebaserc").read_text(encoding="utf-8"))
+    assert alias["projects"]["default"] == _config_del_cliente()["projectId"]
