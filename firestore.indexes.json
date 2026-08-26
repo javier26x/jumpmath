@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "versiones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "generado", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

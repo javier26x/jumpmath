@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resultados DIA · 4° Básico · JUMP Math</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F1; --card:#FFFFFF; --ink:#16202E; --ink-soft:#4A586B;
+    --line:#E7E0D2; --accent:#0E8C7F; --accent-d:#0a665c;
+    --g:#2FA84F; --y:#EFC000; --r:#E0413B; --na:#B7AEA0;
+    --blue:#3E5C9A; --blue-l:#A7C2E2;
+    --g-bg:rgba(47,168,79,.13); --y-bg:rgba(239,192,0,.16); --r-bg:rgba(224,65,59,.13); --na-bg:rgba(183,174,160,.20);
+    --shadow:0 1px 2px rgba(22,32,46,.06),0 8px 24px rgba(22,32,46,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1140px;margin:0 auto;padding:24px 22px 60px}
+  h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;margin:0}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+  .brand img{height:38px;display:block}
+  .kick{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-d);font-weight:700;margin:14px 0 4px}
+  h1{font-size:clamp(24px,3.6vw,34px);line-height:1.06}
+  .sub{color:var(--ink-soft);font-size:13.5px;margin-top:7px;max-width:60ch}
+  .idrbd{font-family:'Archivo';font-weight:700;font-size:12px;color:var(--accent-d);background:rgba(14,140,127,.09);border:1px solid rgba(14,140,127,.25);border-radius:999px;padding:5px 13px;white-space:nowrap}
+  .idcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:var(--shadow);min-width:300px}
+  .idgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 22px}
+  .idgrid>div{display:flex;flex-direction:column;gap:2px}
+  .idl{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+  .idv{font-size:13.5px;color:var(--ink);font-weight:500}
+
+  .secnav{display:flex;gap:8px;margin:22px 0 6px;flex-wrap:wrap}
+  .secbtn{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 15px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .secbtn .no{width:24px;height:24px;border-radius:8px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;font-family:'Fraunces';font-weight:600;font-size:13px;color:var(--ink-soft)}
+  .secbtn .tt{font-family:'Fraunces';font-weight:600;font-size:14px}
+  .secbtn.active{border-color:var(--accent);background:rgba(14,140,127,.05)}
+  .secbtn.active .no{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px}
+  .card h2{font-size:20px;margin-bottom:3px}
+  .card .lead{color:var(--ink-soft);font-size:12.5px;margin-bottom:14px;max-width:74ch}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 16px;box-shadow:var(--shadow)}
+  .kpi .n{font-family:'Fraunces';font-size:26px;font-weight:600;line-height:1}
+  .kpi .l{font-size:11px;color:var(--ink-soft);margin-top:6px}
+  .kpi.acc .n{color:var(--accent)} .kpi.r .n{color:var(--r)} .kpi.g .n{color:var(--g)} .kpi.y .n{color:#b98f00}
+  .sumrow{display:grid;grid-template-columns:280px 1fr;gap:22px;align-items:center}
+  @media(max-width:780px){.sumrow{grid-template-columns:1fr}}
+  .chartbox{position:relative;height:230px}
+  .leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft)}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:middle}
+  .sumtxt p{margin:0 0 10px;font-size:13.5px;color:#26313f;line-height:1.6} .sumtxt b{color:var(--accent-d)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+  td.c{text-align:center}
+  tr.ejehdr td{background:rgba(14,140,127,.06);font-family:'Fraunces';font-weight:600;color:var(--accent-d);font-size:13.5px}
+  tr.avg td{background:rgba(62,92,154,.07);font-weight:700;border-top:2px solid var(--line)}
+  .oacode{font-weight:700;white-space:nowrap}
+  .lvl{font-size:11px;color:var(--ink-soft)}
+  .pct{display:inline-block;min-width:40px;text-align:center;font-weight:700;border-radius:6px;padding:3px 0}
+  .pct.V{background:var(--g);color:#fff}.pct.A{background:var(--y);color:#3a2f00}.pct.R{background:var(--r);color:#fff}
+  .nv{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px}
+  .nv.n3{background:var(--g-bg);color:#1f7a39}.nv.n2{background:var(--y-bg);color:#8a6d12}.nv.n1{background:var(--r-bg);color:#a82a25}
+  .tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:5px;margin-left:6px}
+  .tag.hab{background:rgba(74,88,107,.12);color:var(--ink-soft)}
+
+  .filterbar{display:flex;align-items:center;gap:8px;margin:0 0 16px;flex-wrap:wrap}
+  .flabel{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-right:2px}
+  .fbtn{background:var(--card);border:1px solid var(--line);color:var(--ink-soft);padding:7px 15px;border-radius:999px;cursor:pointer;font-size:12.5px;font-weight:600}
+  .fbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .cov{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .cell{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:#fff}
+  .cell .u{font-family:'Fraunces';font-weight:600;font-size:14px}
+  .cell .lb{font-size:11px;color:var(--ink-soft);margin:2px 0 8px;min-height:28px}
+  .cell .st{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;display:inline-block}
+  .cell.on{border-color:rgba(47,168,79,.4)} .cell.on .st{background:var(--g-bg);color:#1f7a39}
+  .cell.off{background:rgba(183,174,160,.08)} .cell.off .st{background:var(--na-bg);color:#6c6356}
+  .cell .pc{float:right;font-weight:700;color:var(--accent-d);font-size:13px}
+  .tomohdr{grid-column:1/-1;font-family:'Fraunces';font-weight:600;color:var(--ink-soft);font-size:13px;margin-top:6px}
+
+  .cross-est{font-size:10.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .cross-est.rem{background:var(--r-bg);color:#a82a25}
+  .cross-est.esp{background:var(--na-bg);color:#6c6356}
+  .callout{background:rgba(14,140,127,.05);border:1px solid rgba(14,140,127,.25);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;color:#26313f}
+  .callout b{color:var(--accent-d)}
+
+  .rec{border:1px solid var(--line);border-radius:13px;padding:0;margin-bottom:11px;overflow:hidden;background:#fff}
+  .rec summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;align-items:center;gap:12px}
+  .rec summary::-webkit-details-marker{display:none}
+  .rec .qn{font-family:'Fraunces';font-weight:600;font-size:15px;min-width:44px}
+  .rec .rind{font-weight:600;font-size:13.5px;flex:1}
+  .rec .roa{font-size:11px;color:var(--ink-soft)}
+  .rec[open] summary{border-bottom:1px solid var(--line);background:rgba(14,140,127,.03)}
+  .rec .body{padding:14px 16px 4px}
+  .rec .body h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-d);margin:0 0 6px}
+  .rec .base{font-size:12.5px;color:#3a4657;line-height:1.6;white-space:pre-line;margin-bottom:14px}
+  .rec .plus{font-size:12.5px;color:#26313f;line-height:1.6;background:rgba(14,140,127,.045);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:14px}
+  .rec .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--ink-soft);margin-bottom:6px}
+  .uchip{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-weight:600}
+  .arrow{margin-left:auto;color:var(--ink-soft);transition:.15s;font-size:12px}
+  .rec[open] .arrow{transform:rotate(90deg)}
+
+  .hidden{display:none}
+  .foot{margin-top:34px;padding:14px 4px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-soft)}
+  .note{font-size:11.5px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-top:12px}
+
+  .lvldefs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:18px}
+  .lvldef{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:#fff}
+  .lvldef .lt{font-family:'Fraunces';font-weight:600;font-size:13.5px;margin-bottom:3px}
+  .lvldef.n3 .lt{color:#1f7a39}.lvldef.n2 .lt{color:#8a6d12}.lvldef.n1 .lt{color:#a82a25}
+  .lvldef .ld{font-size:11.5px;color:var(--ink-soft);line-height:1.5}
+  .act{margin:4px 0 14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .act .ah{background:rgba(14,140,127,.06);padding:8px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-d)}
+  .act table{font-size:12.5px;border-collapse:collapse;width:100%}
+  .act td{vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--line);line-height:1.55}
+  .act tr:last-child td{border-bottom:none}
+  .act td.k{width:96px;font-weight:700;color:#3a4657;white-space:nowrap;background:var(--paper)}
+  .covlegend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-soft);margin:2px 0 14px}
+  .covlegend b{color:var(--ink)}
+  .srcpanel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px}
+  .srchead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .mockflag{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#8a6b00;background:var(--y-bg);border:1px solid rgba(239,192,0,.4);border-radius:999px;padding:4px 11px;white-space:nowrap}
+  .srcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:12px;margin:14px 0 16px}
+  .srcslot{border:1.5px dashed var(--line);border-radius:12px;padding:13px 15px;background:var(--paper);cursor:pointer;transition:.15s;display:flex;gap:12px;align-items:flex-start}
+  .srcslot:hover{border-color:var(--accent);background:rgba(14,140,127,.04)}
+  .srcslot .sic{width:30px;height:30px;border-radius:8px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;font-size:15px;flex-shrink:0}
+  .srcslot .st2{font-family:'Fraunces',serif;font-weight:600;font-size:13.5px;line-height:1.2}
+  .srcslot .sd{font-size:11px;color:var(--ink-soft);margin-top:2px}
+  .srcslot .sfile{font-size:11px;color:var(--accent-d);font-weight:600;margin-top:4px;word-break:break-all;display:none}
+  .srcslot .spill{font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px;display:inline-block;margin-top:7px;background:var(--na-bg);color:#6c6356}
+  .srcslot .req{color:var(--r)}
+  .srcslot.opt .req{display:none}
+  .srcslot.ok{border-style:solid;border-color:rgba(47,168,79,.5);background:rgba(47,168,79,.05)}
+  .srcslot.ok .spill{background:var(--g-bg);color:#1f7a39}
+  .srcslot.ok .sfile{display:block}
+  .srcactions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .genbtn{background:var(--accent);color:#fff;border:none;border-radius:999px;padding:10px 20px;font-size:13.5px;font-weight:700;font-family:'Archivo',sans-serif;cursor:pointer;box-shadow:var(--shadow)}
+  .genbtn:hover{background:var(--accent-d)}
+  .genbtn:disabled{background:var(--na);cursor:not-allowed;box-shadow:none}
+  .srchint{font-size:12px;color:var(--ink-soft)}
+  @media print{
+    @page{margin:13mm}
+    body{background:#fff}
+    .srcpanel,.secnav,#secExp,.foot{display:none!important}
+    section.hidden{display:block!important}
+    section{page-break-before:always}
+    #secPan{page-break-before:avoid}
+    .rec,.card,tr{break-inside:avoid}
+    .card{box-shadow:none}
+    .top{page-break-after:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div style="flex:1;min-width:260px">
+      <div class="brand"><img src="data:image/png;base64,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" alt="JUMP Math"></div>
+      <div class="kick">Resultados de aprendizaje · Evaluación DIA</div>
+      <h1>Monitoreo Intermedio · <span id="hCurso"></span> Matemática</h1>
+      <p class="sub">Análisis de resultados DIA, cruce con la cobertura curricular JUMP Math y recomendaciones didácticas por indicador. Pensado para integrarse en jm.frody.cl.</p>
+    </div>
+    <div class="idcard">
+      <div class="idgrid" id="idGrid"></div>
+    </div>
+  </div>
+
+  <div class="srcpanel" id="uploadPanel">
+    <div class="srchead">
+      <div>
+        <div class="kick" style="margin:0">Paso 1 · Fuentes de datos del curso</div>
+        <h2 style="font-size:18px;margin-top:4px">Cargar archivos de la escuela</h2>
+      </div>
+      <span class="mockflag" id="mockflag">Maqueta de carga</span>
+    </div>
+    <p class="lead" id="uploadLead" style="color:var(--ink-soft);font-size:12.5px;max-width:82ch;margin:8px 0 0">Sube los archivos del curso y el sistema genera el informe automáticamente. <b>En este prototipo la carga es solo demostrativa</b>: la lectura de los archivos (PDF / Excel) y el cálculo de los resultados son un módulo de backend. Aquí puedes seleccionar archivos para ver el flujo, pero el informe mostrado corresponde a datos ya procesados (4° A · Colegio Manuel Bulnes Prieto).</p>
+    <div class="srcgrid" id="srcgrid"></div>
+    <div class="srcactions">
+      <button class="genbtn" id="genBtn" disabled>Generar informe ↓</button>
+      <span class="srchint" id="srchint">Faltan archivos obligatorios por cargar</span>
+    </div>
+  </div>
+
+  <div class="secnav" id="secnav">
+    <div class="secbtn active" data-sec="pan"><span class="no">1</span><span class="tt">Panorama</span></div>
+    <div class="secbtn" data-sec="est"><span class="no">2</span><span class="tt">Por estudiante</span></div>
+    <div class="secbtn" data-sec="ind"><span class="no">3</span><span class="tt">Por indicador</span></div>
+    <div class="secbtn" data-sec="cru"><span class="no">4</span><span class="tt">Cobertura JUMP Math</span></div>
+    <div class="secbtn" data-sec="rec"><span class="no">5</span><span class="tt">Recomendaciones</span></div>
+    <div class="secbtn" data-sec="exp"><span class="no">6</span><span class="tt">Descargar PDF</span></div>
+  </div>
+
+  <!-- 1 PANORAMA -->
+  <section id="secPan">
+    <div class="callout" id="panContext"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <h2>Distribución por nivel de logro</h2>
+      <p class="lead">Clasificación oficial del DIA en tres niveles referidos a los OA de término de 4° básico.</p>
+      <div class="sumrow">
+        <div class="chartbox" id="donutBox"></div>
+        <div class="sumtxt">
+          <div class="leg" style="margin-bottom:12px">
+            <span><span class="sw" style="background:var(--g)"></span>Nivel III · Satisfactorio</span>
+            <span><span class="sw" style="background:var(--y)"></span>Nivel II · Intermedio</span>
+            <span><span class="sw" style="background:var(--r)"></span>Nivel I · Insatisfactorio</span>
+          </div>
+          <div id="panTxt"></div>
+        </div>
+      </div>
+      <div class="lvldefs" id="lvldefs"></div>
+      <div class="note" id="panNote"></div>
+    </div>
+    <div class="card">
+      <h2>Porcentaje de logro por eje temático</h2>
+      <p class="lead">Promedio de respuestas correctas del curso en cada eje (reproduce el Gráfico 2 del informe oficial DIA). Semáforo de logro: verde ≥80% · amarillo 60–79% · rojo &lt;60%.</p>
+      <div class="chartbox" id="ejeBox" style="height:250px"></div>
+      <div class="note" id="ejeNote"></div>
+    </div>
+  </section>
+
+  <!-- 2 POR ESTUDIANTE -->
+  <section id="secEst" class="hidden">
+    <div class="card">
+      <h2>Resultados por estudiante</h2>
+      <p class="lead">% de logro por eje y nivel de logro alcanzado. El color sigue el semáforo de logro (verde ≥80% · amarillo 60–79% · rojo &lt;60%). <b>Global</b> = % de logro en las 31 preguntas (promedio ponderado por el número de preguntas de cada eje, indicado entre paréntesis); por eso no coincide con el promedio simple de las cinco columnas. <b>Nivel</b> = clasificación oficial del DIA (no es un corte por %).</p>
+      <div style="overflow-x:auto"><table id="tEst"></table></div>
+    </div>
+  </section>
+
+  <!-- 3 POR INDICADOR -->
+  <section id="secInd" class="hidden">
+    <div class="card">
+      <h2>Resultados por indicador</h2>
+      <p class="lead">Las 31 preguntas de la prueba con su OA, eje, habilidad e indicador de evaluación (redacción textual del informe oficial). Filtra por nivel de logro y por habilidad matemática.</p>
+      <div class="filterbar" id="fIndNivel">
+        <span class="flabel">Nivel de logro</span>
+        <button class="fbtn active" data-f="all">Todos</button>
+        <button class="fbtn" data-f="R">Insatisfactorio &lt;60%</button>
+        <button class="fbtn" data-f="A">Intermedio 60–79%</button>
+        <button class="fbtn" data-f="V">Satisfactorio ≥80%</button>
+      </div>
+      <div class="filterbar" id="fIndHab">
+        <span class="flabel">Habilidad</span>
+        <button class="fbtn active" data-h="all">Todas</button>
+        <button class="fbtn" data-h="Representar">Representar</button>
+        <button class="fbtn" data-h="Resolver problemas">Resolver problemas</button>
+        <button class="fbtn" data-h="Modelar">Modelar</button>
+      </div>
+      <div style="overflow-x:auto"><table id="tInd"></table></div>
+    </div>
+  </section>
+
+  <!-- 4 COBERTURA -->
+  <section id="secCru" class="hidden">
+    <div class="card">
+      <h2>Cobertura curricular JUMP Math</h2>
+      <p class="lead">Porcentajes de logro según seguimiento a las evaluaciones de JUMP Math por unidad.</p>
+      <div class="callout" id="planNote"></div>
+      <div class="covlegend">
+        <span><span class="sw" style="background:var(--g)"></span><b>Con resultados</b> — control/prueba JUMP aplicado y registrado (se muestra % de logro)</span>
+        <span><span class="sw" style="background:var(--na)"></span><b>Sin registro de resultados</b> — sin evaluación cargada a la fecha</span>
+      </div>
+      <div class="cov" id="covGrid"></div>
+      <div class="note" id="covNote"></div>
+    </div>
+    <div class="card">
+      <h2>Cruce: indicadores descendidos × cobertura JUMP</h2>
+      <div class="callout" id="crossCallout"></div>
+      <div style="overflow-x:auto"><table id="tCross"></table></div>
+    </div>
+  </section>
+
+  <!-- 5 RECOMENDACIONES -->
+  <section id="secRec" class="hidden">
+    <div class="card">
+      <h2>Recomendaciones didácticas</h2>
+      <p class="lead">Orientación base del archivo de recomendaciones por indicador + profundización por caso. <b>Prioritario</b> = indicador descendido cuya unidad JUMP <b>ya se trabajó</b> (remediar); <b>No abordado aún</b> = contenido cuya unidad JUMP todavía no se enseña (secuenciar).</p>
+      <div class="filterbar" id="fRec">
+        <span class="flabel">Mostrar</span>
+        <button class="fbtn active" data-f="all">Todos (17)</button>
+        <button class="fbtn" data-f="rem">Prioritarios</button>
+        <button class="fbtn" data-f="esp">No abordados</button>
+        <button class="fbtn" data-f="R">Insatisfactorio &lt;60%</button>
+      </div>
+      <div id="recList"></div>
+    </div>
+  </section>
+
+  <!-- 6 EXPORTAR -->
+  <section id="secExp" class="hidden">
+    <div class="card">
+      <h2>Descargar informe en PDF</h2>
+      <p class="lead">Genera un PDF con <b>todas</b> las secciones del informe (Panorama, Por estudiante, Por indicador, Cobertura curricular JUMP Math y Recomendaciones), listo para compartir con la docente o el equipo directivo, o para archivar en la carpeta del curso.</p>
+      <button class="genbtn" id="pdfBtn">⭳ Descargar informe en PDF</button>
+      <div class="note">Se abrirá el cuadro de impresión del navegador: elige <b>“Guardar como PDF”</b> como destino. El informe se exporta completo, con todas las secciones expandidas y las recomendaciones desplegadas. También puedes usar Ctrl/Cmd + P desde esta sección.</div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>Prototipo · Suite de Reporte JUMP Math · datos DIA Monitoreo Intermedio 2026</span>
+    <span class="fl">Semáforo de logro · verde ≥80% · amarillo 60–79% · rojo &lt;60%</span>
+  </div>
+</div>
+
+<script>
+const D={"meta": {"colegio": "Colegio Manuel Bulnes Prieto", "rbd": "1886", "curso": "4° A", "docente": "Sandra Ivonne Barahona Celedón", "director": "Marlene Tapia Orellana", "n": 26, "fecha": "12/08/2026", "prueba": "DIA · Monitoreo Intermedio 2026 · Matemática"}, "niveles": {"I": 0, "II": 13, "III": 13}, "ejes": ["Números y operaciones", "Patrones y álgebra", "Geometría", "Medición", "Datos y probabilidades"], "ejeProm": [76.4, 69.2, 72.1, 69.2, 73.1], "promGlobal": 73, "students": [{"n": "Accilien . Yvedayouna", "nyo": 60, "pa": 33, "geo": 25, "med": 33, "dyp": 67, "g": 48, "lv": 2}, {"n": "Ahumada Lagos Máximo Vicente", "nyo": 87, "pa": 100, "geo": 75, "med": 83, "dyp": 100, "g": 87, "lv": 3}, {"n": "Alvizua Navas Abdiel Brhainn", "nyo": 53, "pa": 67, "geo": 25, "med": 33, "dyp": 33, "g": 45, "lv": 2}, {"n": "Arancibia Sandoval Marcelo Alonso", "nyo": 53, "pa": 67, "geo": 75, "med": 83, "dyp": 33, "g": 61, "lv": 2}, {"n": "Arnold Posada Maximiliano Antonio", "nyo": 70, "pa": 33, "geo": 50, "med": 100, "dyp": 100, "g": 73, "lv": 2}, {"n": "Astudillo Yáñez Amanda Pascal", "nyo": 87, "pa": 67, "geo": 50, "med": 50, "dyp": 33, "g": 68, "lv": 2}, {"n": "Augustin . Josue", "nyo": 73, "pa": 100, "geo": 75, "med": 50, "dyp": 33, "g": 68, "lv": 2}, {"n": "Ayala Martínez Nahuel Ivan", "nyo": 73, "pa": 67, "geo": 75, "med": 83, "dyp": 100, "g": 77, "lv": 3}, {"n": "Baez Ruiz Miyerlys Lucia", "nyo": 77, "pa": 67, "geo": 75, "med": 67, "dyp": 100, "g": 76, "lv": 3}, {"n": "Celpa Neira Agustina Isidora", "nyo": 73, "pa": 67, "geo": 75, "med": 33, "dyp": 100, "g": 68, "lv": 2}, {"n": "Espínola Carrasco Aurora Antu", "nyo": 87, "pa": 67, "geo": 50, "med": 100, "dyp": 67, "g": 81, "lv": 3}, {"n": "Freitez Mendoza Leandro Enmanuel", "nyo": 100, "pa": 100, "geo": 100, "med": 83, "dyp": 100, "g": 97, "lv": 3}, {"n": "González Allen Thiago Jesús", "nyo": 77, "pa": 67, "geo": 75, "med": 83, "dyp": 67, "g": 76, "lv": 3}, {"n": "Guedez Suarez Paula Isabella", "nyo": 93, "pa": 100, "geo": 100, "med": 83, "dyp": 100, "g": 94, "lv": 3}, {"n": "Llanes Altamar Luis Fernando", "nyo": 80, "pa": 100, "geo": 100, "med": 83, "dyp": 100, "g": 87, "lv": 3}, {"n": "Muñoz Fuenzalida Maitte Ignacia", "nyo": 77, "pa": 33, "geo": 100, "med": 50, "dyp": 67, "g": 69, "lv": 2}, {"n": "Oliveira Kepp Luciano Enmanuel", "nyo": 80, "pa": 33, "geo": 75, "med": 83, "dyp": 33, "g": 71, "lv": 2}, {"n": "Perez Valencia Maria De Los Angeles", "nyo": 80, "pa": 33, "geo": 0, "med": 83, "dyp": 33, "g": 61, "lv": 2}, {"n": "Rengifo Ovando Noel Halim", "nyo": 93, "pa": 100, "geo": 100, "med": 100, "dyp": 100, "g": 97, "lv": 3}, {"n": "Riquelme Zúñiga Florencia Antonia", "nyo": 33, "pa": 67, "geo": 75, "med": 33, "dyp": 100, "g": 48, "lv": 2}, {"n": "Roldán Morales Constanza Victoria", "nyo": 53, "pa": 33, "geo": 75, "med": 50, "dyp": 33, "g": 52, "lv": 2}, {"n": "Sulbaran Carrasco Santiago Alexander", "nyo": 70, "pa": 67, "geo": 100, "med": 67, "dyp": 67, "g": 73, "lv": 2}, {"n": "Viveros Madrid Máximo Jesús", "nyo": 83, "pa": 67, "geo": 75, "med": 83, "dyp": 100, "g": 82, "lv": 3}, {"n": "Zambrano Burgos Francisco Javier", "nyo": 80, "pa": 100, "geo": 100, "med": 83, "dyp": 33, "g": 81, "lv": 3}, {"n": "Zamora Díaz María Paz", "nyo": 100, "pa": 67, "geo": 50, "med": 67, "dyp": 100, "g": 84, "lv": 3}, {"n": "Camara Bravo Simona Paz", "nyo": 93, "pa": 100, "geo": 100, "med": 50, "dyp": 100, "g": 87, "lv": 3}], "questions": [{"q": 1, "oa": 1, "eje": "Números y operaciones", "hab": "Representar", "ind": "Leen números naturales del 0 al 10 000.", "pct": 100, "sem": "V", "tipo": "alternativas", "dist": {"A": 0.0, "B": 0.0, "C": 0.0, "D": 100.0, "N": 0.0}}, {"q": 2, "oa": 3, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Calculan adiciones de números naturales hasta 1 000.", "pct": 100, "sem": "V", "tipo": "completación", "dist": {"RC": 100.0, "RI": 0.0, "N": 0.0}}, {"q": 3, "oa": 5, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Resuelven problemas que requieren calcular multiplicaciones de números naturales.", "pct": 81, "sem": "V", "tipo": "alternativas", "dist": {"A": 3.85, "B": 7.69, "C": 7.69, "D": 80.77, "N": 0.0}}, {"q": 4, "oa": 6, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Calculan divisiones exactas de números naturales.", "pct": 100, "sem": "V", "tipo": "completación", "dist": {"RC": 100.0, "RI": 0.0, "N": 0.0}}, {"q": 5, "oa": 7, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Resuelven problemas no rutinarios en contextos cotidianos que incluyen dinero.", "pct": 38, "sem": "R", "tipo": "desarrollo", "dist": {"RC": 38.46, "RPC": 23.08, "RI": 38.46}}, {"q": 6, "oa": 8, "eje": "Números y operaciones", "hab": "Representar", "ind": "Identifican representaciones de las fracciones como partes de un todo.", "pct": 85, "sem": "V", "tipo": "alternativas", "dist": {"A": 3.85, "B": 7.69, "C": 84.62, "D": 3.85, "N": 0.0}}, {"q": 7, "oa": 9, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Resuelven problemas que requieren calcular sustracciones de fracciones con igual denominador.", "pct": 42, "sem": "R", "tipo": "alternativas", "dist": {"A": 19.23, "B": 42.31, "C": 11.54, "D": 26.92, "N": 0.0}}, {"q": 8, "oa": 11, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Ordenan números decimales.", "pct": 50, "sem": "R", "tipo": "alternativas", "dist": {"A": 3.85, "B": 30.77, "C": 15.38, "D": 50.0, "N": 0.0}}, {"q": 9, "oa": 12, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Calculan sustracciones de números decimales.", "pct": 81, "sem": "V", "tipo": "alternativas", "dist": {"A": 80.77, "B": 0.0, "C": 3.85, "D": 15.38, "N": 0.0}}, {"q": 10, "oa": 14, "eje": "Patrones y álgebra", "hab": "Resolver problemas", "ind": "Resuelven ecuaciones de un paso que involucren adiciones y sustracciones.", "pct": 85, "sem": "V", "tipo": "alternativas", "dist": {"A": 84.62, "B": 3.85, "C": 0.0, "D": 11.54, "N": 0.0}}, {"q": 11, "oa": 15, "eje": "Geometría", "hab": "Representar", "ind": "Identifican la posición de objetos en una cuadrícula usando coordenadas informales.", "pct": 88, "sem": "V", "tipo": "alternativas", "dist": {"A": 3.85, "B": 7.69, "C": 0.0, "D": 88.46, "N": 0.0}}, {"q": 12, "oa": 16, "eje": "Geometría", "hab": "Representar", "ind": "Identifican vistas de figuras 3D.", "pct": 77, "sem": "A", "tipo": "alternativas", "dist": {"A": 0.0, "B": 15.38, "C": 76.92, "D": 7.69, "N": 0.0}}, {"q": 13, "oa": 20, "eje": "Medición", "hab": "Representar", "ind": "Leen mediciones del tiempo en relojes análogos.", "pct": 77, "sem": "A", "tipo": "alternativas", "dist": {"A": 3.85, "B": 76.92, "C": 11.54, "D": 7.69, "N": 0.0}}, {"q": 14, "oa": 23, "eje": "Medición", "hab": "Resolver problemas", "ind": "Calculan el área de un cuadrado.", "pct": 54, "sem": "R", "tipo": "alternativas", "dist": {"A": 7.69, "B": 19.23, "C": 19.23, "D": 53.85, "N": 0.0}}, {"q": 15, "oa": 24, "eje": "Medición", "hab": "Resolver problemas", "ind": "Calculan el volumen de un cuerpo.", "pct": 92, "sem": "V", "tipo": "alternativas", "dist": {"A": 92.31, "B": 3.85, "C": 3.85, "D": 0.0, "N": 0.0}}, {"q": 16, "oa": 26, "eje": "Datos y probabilidades", "hab": "Representar", "ind": "Identifican la representación gráfica que organiza los resultados de un experimento aleatorio.", "pct": 85, "sem": "V", "tipo": "alternativas", "dist": {"A": 3.85, "B": 84.62, "C": 7.69, "D": 0.0, "N": 3.85}}, {"q": 17, "oa": 1, "eje": "Números y operaciones", "hab": "Representar", "ind": "Identifican el valor posicional de los dígitos en números naturales hasta 10 000.", "pct": 92, "sem": "V", "tipo": "alternativas", "dist": {"A": 3.85, "B": 0.0, "C": 92.31, "D": 3.85, "N": 0.0}}, {"q": 18, "oa": 8, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Comparan fracciones.", "pct": 92, "sem": "V", "tipo": "alternativas", "dist": {"A": 0.0, "B": 3.85, "C": 92.31, "D": 0.0, "N": 3.85}}, {"q": 19, "oa": 9, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Calculan adiciones de fracciones con igual denominador.", "pct": 62, "sem": "A", "tipo": "completación", "dist": {"RC": 61.54, "RI": 34.62, "N": 3.85}}, {"q": 20, "oa": 10, "eje": "Números y operaciones", "hab": "Representar", "ind": "Identifican representaciones de números mixtos.", "pct": 81, "sem": "V", "tipo": "alternativas", "dist": {"A": 3.85, "B": 80.77, "C": 3.85, "D": 11.54, "N": 0.0}}, {"q": 21, "oa": 11, "eje": "Números y operaciones", "hab": "Representar", "ind": "Identifican representaciones de números decimales.", "pct": 58, "sem": "R", "tipo": "alternativas", "dist": {"A": 57.69, "B": 26.92, "C": 3.85, "D": 11.54, "N": 0.0}}, {"q": 22, "oa": 12, "eje": "Números y operaciones", "hab": "Resolver problemas", "ind": "Resuelven problemas que requieren calcular adiciones de números decimales.", "pct": 73, "sem": "A", "tipo": "alternativas", "dist": {"A": 3.85, "B": 73.08, "C": 7.69, "D": 15.38, "N": 0.0}}, {"q": 23, "oa": 13, "eje": "Patrones y álgebra", "hab": "Modelar", "ind": "Identifican un patrón de formación de secuencias numéricas presentadas en tablas.", "pct": 58, "sem": "R", "tipo": "alternativas", "dist": {"A": 11.54, "B": 23.08, "C": 57.69, "D": 7.69, "N": 0.0}}, {"q": 24, "oa": 14, "eje": "Patrones y álgebra", "hab": "Resolver problemas", "ind": "Resuelven inecuaciones aditivas de un paso que involucren adiciones y sustracciones.", "pct": 65, "sem": "A", "tipo": "alternativas", "dist": {"A": 65.38, "B": 26.92, "C": 7.69, "N": 0.0}}, {"q": 25, "oa": 17, "eje": "Geometría", "hab": "Representar", "ind": "Identifican figuras simétricas.", "pct": 62, "sem": "A", "tipo": "alternativas", "dist": {"A": 7.69, "B": 15.38, "C": 11.54, "D": 61.54, "N": 3.85}}, {"q": 26, "oa": 18, "eje": "Geometría", "hab": "Representar", "ind": "Identifican figuras 2D relacionadas por una rotación.", "pct": 62, "sem": "A", "tipo": "alternativas", "dist": {"A": 7.69, "B": 15.38, "C": 11.54, "D": 61.54, "N": 3.85}}, {"q": 27, "oa": 20, "eje": "Medición", "hab": "Representar", "ind": "Registran mediciones del tiempo en relojes digitales.", "pct": 77, "sem": "A", "tipo": "alternativas", "dist": {"A": 7.69, "B": 0.0, "C": 76.92, "D": 11.54, "N": 3.85}}, {"q": 28, "oa": 21, "eje": "Medición", "hab": "Resolver problemas", "ind": "Resuelven problemas que requieren realizar conversiones de unidades de tiempo.", "pct": 73, "sem": "A", "tipo": "alternativas", "dist": {"A": 3.85, "B": 73.08, "C": 15.38, "D": 3.85, "N": 3.85}}, {"q": 29, "oa": 22, "eje": "Medición", "hab": "Resolver problemas", "ind": "Realizan conversiones entre unidades de longitud.", "pct": 42, "sem": "R", "tipo": "alternativas", "dist": {"A": 38.46, "B": 11.54, "C": 3.85, "D": 42.31, "N": 3.85}}, {"q": 30, "oa": 27, "eje": "Datos y probabilidades", "hab": "Representar", "ind": "Leen información presentada en pictogramas con escala.", "pct": 81, "sem": "V", "tipo": "alternativas", "dist": {"A": 7.69, "B": 3.85, "C": 80.77, "D": 3.85, "N": 3.85}}, {"q": 31, "oa": 27, "eje": "Datos y probabilidades", "hab": "Representar", "ind": "Interpretan información presentada en un gráfico de barra simple con escala.", "pct": 54, "sem": "R", "tipo": "completación", "dist": {"RC": 53.85, "RI": 38.46, "N": 7.69}}], "coverage": [{"tomo": "4.1", "u": "U1", "label": "Series", "status": "res", "pct": 84}, {"tomo": "4.1", "u": "U2", "label": "Valor posicional, sumas y restas", "status": "res", "pct": 85}, {"tomo": "4.1", "u": "U3", "label": "Redondear", "status": "none", "pct": null}, {"tomo": "4.1", "u": "U4", "label": "Multiplicar", "status": "res", "pct": 82}, {"tomo": "4.1", "u": "U5", "label": "Dividir", "status": "res", "pct": 84}, {"tomo": "4.1", "u": "U6", "label": "Unidades métricas y tiempo", "status": "none", "pct": null}, {"tomo": "4.2", "u": "U1", "label": "Figuras", "status": "res", "pct": 88}, {"tomo": "4.2", "u": "U2", "label": "Hallar el resto", "status": "none", "pct": null}, {"tomo": "4.2", "u": "U3", "label": "Problemas", "status": "none", "pct": null}, {"tomo": "4.2", "u": "U4", "label": "Fracciones", "status": "none", "pct": null}, {"tomo": "4.2", "u": "U5", "label": "Decimales", "status": "none", "pct": null}, {"tomo": "4.2", "u": "U6", "label": "Área y volumen", "status": "none", "pct": null}, {"tomo": "4.2", "u": "U7", "label": "Ángulos y coordenadas", "status": "none", "pct": null}, {"tomo": "4.2", "u": "U8", "label": "Diagramas", "status": "none", "pct": null}], "recs": [{"q": 5, "oa": "7", "ind": "Resuelven problemas no rutinarios en contextos cotidianos que incluyen dinero.", "pct": 38, "sem": "R", "units": "4.1 · U2 Valor posicional, sumas y restas ✓ 85% · 4.2 · U3 Problemas ✗", "estado": "remediar", "base": "Abordar estrategias de RP como el ensayo y error, transferir desde problemas similares ya resueltos, como también resolver problemas en contexto de dinero y representarlos usando monedas y/o billetes (jugar al supermercado).  Reforzar composición y descomposición de un número de tres cifras a partir de diversas combinaciones, por ejemplo: 850 = 300 + 300 + 250.  Uso de “Fichas de Monitoreo Diario” U2 (4.1).   Ejemplos de actividades para realizar en el inicio de al menos dos clases:   Materiales: imágenes de productos con precios y pizarras.  Clase 1 - ¿Alcanza o no alcanza?: Con un presupuesto de $1 000 y precios de $320, $450, $580 y $670, cada pareja elige dos productos, calcula el total y escribe total ≤ $1 000. Analizar también una elección que no alcance.  Clase 2 - Compra y vuelto: Usar nuevos precios ($250, $360, $540 y $690). Elegir dos productos, calcular el total y luego el vuelto mediante $1 000 - total. Registrar las dos operaciones y una respuesta escrita.  Comprobación: dos productos elegidos, total correcto, respeto del presupuesto y vuelto correcto.", "plus": "El DIA muestra 38% correcto pero 23% <b>parcialmente</b> correcto: cerca de 6 de cada 10 estudiantes eligieron una estrategia y productos válidos, pero fallaron en la operatoria (cálculo del vuelto con canje). El cuello de botella no es comprender el problema, sino la fluidez de la adición/sustracción con canje. La caída de 32 pts frente al control JUMP de U2 (70%) se explica porque el ítem DIA es no rutinario y de varios pasos. Añadir: (1) priorizar precisión del cálculo con canje antes que la estrategia; (2) instalar la estimación previa y la verificación del vuelto (“¿es razonable?”) como rutina metacognitiva; (3) usar problemas con datos que sobran, no solo cálculo directo."}, {"q": 7, "oa": "9", "ind": "Resuelven problemas que requieren calcular sustracciones de fracciones con igual denominador.", "pct": 42, "sem": "R", "units": "4.2 · U4 Fracciones ✗", "estado": "esperado", "base": "Concepto aún no trabajado o en desarrollo.", "plus": "Prerrequisito ya logrado: “fracciones parte-todo” (P6, 85%). Apoyarse en él al introducir la sustracción de fracciones con igual denominador."}, {"q": 29, "oa": "22", "ind": "Realizan conversiones entre unidades de longitud.", "pct": 42, "sem": "R", "units": "4.1 · U6 Unidades métricas y tiempo ✗", "estado": "esperado", "base": "Concepto aún no trabajado o en desarrollo.    Uso de \"Fichas de Monitoreo Diario\" U6 (4.1).", "plus": "Distractor A muy fuerte (38%): apunta a una dirección o factor de conversión incorrectos (m↔cm). Al abordar U6, poner el énfasis en el factor correcto usando material graduado."}, {"q": 8, "oa": "11", "ind": "Ordenan números decimales.", "pct": 50, "sem": "R", "units": "4.2 · U5 Decimales ✗", "estado": "esperado", "base": "Concepto aún no trabajado.", "plus": "Distractor B (31%) refleja el error “más dígitos, mayor valor” (p. ej. 0,45 > 0,5). Al enseñar U5, contrastar con material de valor posicional decimal."}, {"q": 14, "oa": "23", "ind": "Calculan el área de un cuadrado.", "pct": 54, "sem": "R", "units": "4.2 · U6 Área y volumen ✗", "estado": "esperado", "base": "Concepto aún no trabajado.   Se recomienda articular (Ver Proyecto de Articulación Curricular - Medición)   Uso de \"Fichas de Monitoreo Diario\" U6 (4.2).", "plus": "Al abordar U6, distinguir explícitamente área (superficie / conteo de cuadrículas) de perímetro."}, {"q": 31, "oa": "27", "ind": "Interpretan información presentada en un gráfico de barra simple con escala.", "pct": 54, "sem": "R", "units": "4.2 · U8 Diagramas ✗", "estado": "esperado", "base": "Concepto aún no trabajado, aunque corresponde a conocimientos abordados en 3° Básico (OA25).  Se recomienda articular.   Uso de \"Fichas de Monitoreo Diario\" U8 (4.2).", "plus": "Al abordar U8, trabajar la lectura de la escala del gráfico, no solo la altura de la barra."}, {"q": 21, "oa": "11", "ind": "Identifican representaciones de números decimales.", "pct": 58, "sem": "R", "units": "4.2 · U5 Decimales ✗", "estado": "esperado", "base": "Concepto aún no trabajado.", "plus": "Distractor B (27%): confusión entre representación fraccionaria y decimal. Reforzar la equivalencia al introducir U5."}, {"q": 23, "oa": "13", "ind": "Identifican un patrón de formación de secuencias numéricas presentadas en tablas.", "pct": 58, "sem": "R", "units": "4.1 · U1 Series ✓ 84% · 4.2 · U3 Problemas ✗", "estado": "remediar", "base": "Trabajar con el tablero del 100 a la vista, estrategias de CM para contar a saltos de manera ascendente y descendente, utilizando una regla que incluya el patrón multiplicativo y uno de sus términos.   Error frecuente: buscar la diferencia solo entre los dos primeros términos de la secuencia.   Uso de “Fichas de Monitoreo Diario” U1 (4.1).   Ejemplos de actividades para realizar en el inicio de al menos dos clases:  Materiales: pizarras.   Clase 1 - Una regla para todos los pasos: Mostrar 3, 6, 12, 24. Probar las reglas \"sumar 3\" y \"multiplicar por 2\" en cada transición; descartar la que no funciona siempre. Preguntar: ¿La regla sirve también de 6 a 12 y de 12 a 24?  Clase 2: Comparar 8, 16, 24, 32 con 5, 10, 20, 40. Identificar si la regla es sumar una cantidad fija o multiplicar por 2 y completar dos términos.  Comprobación: aceptar la regla solo si el estudiante la verifica en todas las transiciones, no únicamente entre los dos primeros términos.", "plus": "El patrón en el DIA se presenta en <b>tabla</b>, no como secuencia lineal: exige leer la relación entre términos, no solo el “salto siguiente”. El distractor B (23%) corresponde a continuar sumando el último salto en vez de identificar la regla constante. La caída del control U1 (81%) al DIA (58%) —23 pts— es coherente con el cambio de formato. Añadir: (1) pedir enunciar la regla en palabras (“cada término aumenta en ___”) antes de completar; (2) alternar tablas crecientes y decrecientes; (3) usar tablas donde el primer salto no sea evidente."}, {"q": 19, "oa": "9", "ind": "Calculan adiciones de fracciones con igual denominador.", "pct": 62, "sem": "A", "units": "4.2 · U4 Fracciones ✗", "estado": "esperado", "base": "Concepto aún no trabajado o en desarrollo.", "plus": "Prerrequisito: fracciones parte-todo (logrado). Introducir la adición con igual denominador apoyándose en él."}, {"q": 25, "oa": "17", "ind": "Identifican figuras simétricas.", "pct": 62, "sem": "A", "units": "4.2 · U1 Figuras ✓ 88%", "estado": "remediar", "base": "Se recomienda articular (Ver Proyecto de Articulación Curricular - Geometría).   Ejemplos de actividades para realizar en el inicio de al menos dos clases:  Materiales: cuadrícula, recortes o espejo.    Clase 1: Mostrar un cuadrado, un paralelogramo, un triángulo escaleno y un trapecio isósceles. Antes de verificar, cada estudiante predice cuáles son simétricos y dibuja un posible eje. Comprobar mediante plegado, recorte o espejo. Preguntar: ¿Los puntos correspondientes quedan a igual distancia del eje?  Clase 2: Completar en cuadrícula la mitad faltante de dos figuras y luego identificar la figura simétrica entre tres opciones.", "plus": "Enseñado en U1 (4.2): control 78% → DIA 62% (−16 pts). Los distractores repartidos (B 15%, C 12%) sugieren confusión entre <b>eje de simetría</b> y otras transformaciones (rotación/traslación). Añadir: (1) verificación concreta con doblado de papel y espejo (mira); (2) contrastar figuras simétricas con figuras “casi simétricas” (contraejemplos) para afinar el criterio; (3) marcar explícitamente el eje."}, {"q": 26, "oa": "18", "ind": "Identifican figuras 2D relacionadas por una rotación.", "pct": 62, "sem": "A", "units": "4.2 · U7 Ángulos y coordenadas ✗", "estado": "esperado", "base": "Concepto aún no trabajado, aunque corresponde a conocimientos abordados en 3° Básico (OA17).  Se recomienda articular (Ver Proyecto de Articulación Curricular - Geometría).   Ejemplos de actividades para realizar en el inicio de al menos dos clases:  Materiales: recorte de una figura con un punto marcado.   Clase 1 - Girar, no voltear: Trazar una figura marcada, rotarla 90° y 180° alrededor de un punto fijo sin darla vuelta y volver a trazarla. Comparar con una traslación y una reflexión. Preguntar: ¿Qué cambió y qué se mantuvo?  Clase 2: Mostrar tres pares de figuras: uno por rotación, uno por reflexión y uno por traslación. Identificar la transformación y justificar usando la posición del punto marcado y la orientación de los lados; verificar con el recorte.  Comprobación: reconoce la rotación y explica que la figura conserva forma y tamaño, pero cambia de orientación.", "plus": ""}, {"q": 24, "oa": "14", "ind": "Resuelven inecuaciones aditivas de un paso que involucren adiciones y sustracciones.", "pct": 65, "sem": "A", "units": "4.2 · U3 Problemas ✗", "estado": "esperado", "base": "Concepto aún no trabajado.", "plus": "Consolidar primero las ecuaciones de un paso (P10, 85% logrado) antes de introducir inecuaciones."}, {"q": 22, "oa": "12", "ind": "Resuelven problemas que requieren calcular adiciones de números decimales.", "pct": 73, "sem": "A", "units": "4.2 · U5 Decimales ✗", "estado": "esperado", "base": "Concepto aún no trabajado.", "plus": "Amarillo alto (73%). Reforzar alineación por valor posicional al sumar decimales en U5."}, {"q": 28, "oa": "21", "ind": "Resuelven problemas que requieren realizar conversiones de unidades de tiempo.", "pct": 73, "sem": "A", "units": "4.1 · U6 Unidades métricas y tiempo ✗", "estado": "esperado", "base": "Concepto aún no trabajado o en desarrollo.    Uso de \"Fichas de Monitoreo Diario\" U6 (4.1).", "plus": ""}, {"q": 12, "oa": "16", "ind": "Identifican vistas de figuras 3D.", "pct": 77, "sem": "A", "units": "4.2 · U7 Ángulos y coordenadas ✗", "estado": "esperado", "base": "Concepto aún no trabajado.   Se recomienda articular (Ver Proyecto de Articulación Curricular - Geometría).", "plus": ""}, {"q": 13, "oa": "20", "ind": "Leen mediciones del tiempo en relojes análogos.", "pct": 77, "sem": "A", "units": "4.1 · U6 Unidades métricas y tiempo ✗", "estado": "esperado", "base": "Concepto aún no trabajado o en desarrollo, aunque corresponde a conocimientos abordados en 3° Básico (OA20).  Se recomienda articular (Ver Proyecto de Articulación Curricular - Medición).  Ejemplos de actividades para realizar en el inicio de al menos dos clases:  Materiales: reloj análogo manipulable o dibujado.  Clase 1: Contar los minutos de 5 en 5 alrededor del reloj. Situar el minutero en el 8 (40 minutos) y luego observar que la manecilla horaria ya pasó el 10, pero aún no llega al 11: son las 10:40. Preguntar: ¿Qué hora ya pasó? Practicar también 3:20.  Clase 2: Representar y escribir en formato digital 6:35 y 11:50; luego leer un reloj mostrado por el docente.", "plus": ""}, {"q": 27, "oa": "20", "ind": "Registran mediciones del tiempo en relojes digitales.", "pct": 77, "sem": "A", "units": "4.1 · U6 Unidades métricas y tiempo ✗", "estado": "esperado", "base": "Concepto aún no trabajado o en desarrollo.    Se recomienda articular como actividad cotidiana.   Uso de \"Fichas de Monitoreo Diario\" U6 (4.1).", "plus": ""}], "ejeQC": [15, 3, 4, 6, 3]};
+const LVLC=['#2FA84F','#EFC000','#E0413B'];
+const EJELAB={'Números y operaciones':['Números y','operaciones'],'Patrones y álgebra':['Patrones y','álgebra'],'Geometría':['Geometría'],'Medición':['Medición'],'Datos y probabilidades':['Datos y','probabilidades']};
+const EJESHORT=['N. y op. (15)','Patrones (3)','Geom. (4)','Medición (6)','Datos (3)'];
+const clear=()=>{};
+const nvcls=lv=>'n'+lv, nvtxt=lv=>lv===3?'Nivel III':lv===2?'Nivel II':'Nivel I';
+function donutSVG(vals,colors){
+  const cx=115,cy=115,r=80,sw=34,C=2*Math.PI*r;
+  const total=vals.reduce((a,b)=>a+b,0)||1; let off=0,segs='';
+  vals.forEach((v,i)=>{ if(v>0){ const len=C*v/total;
+    segs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[i]}" stroke-width="${sw}" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`; off+=len; } });
+  return `<svg viewBox="0 0 230 230" width="100%" height="100%" style="max-height:230px" preserveAspectRatio="xMidYMid meet">${segs}`+
+    `<text x="115" y="110" text-anchor="middle" font-family="Fraunces,serif" font-size="30" font-weight="600" fill="#16202E">${D.meta.n}</text>`+
+    `<text x="115" y="132" text-anchor="middle" font-family="Archivo,sans-serif" font-size="11" fill="#4A586B">estudiantes</text></svg>`;
+}
+function barsSVG(vals,labelPairs){
+  const W=600,H=250,padT=18,padB=48,padL=28,padR=14;
+  const n=vals.length,plotH=H-padT-padB,base=padT+plotH,inner=W-padL-padR,slot=inner/n,bw=Math.min(64,slot*0.56);
+  let g='';[0,25,50,75,100].forEach(t=>{const y=base-plotH*t/100;g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#EEE8DA"/><text x="${padL-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#9a8f7d" font-family="Archivo,sans-serif">${t}</text>`;});
+  let bars='';
+  vals.forEach((v,i)=>{const x=padL+slot*i+(slot-bw)/2;const bh=plotH*v/100;const y=base-bh;const col=v>=80?'#2FA84F':v>=60?'#EFC000':'#E0413B';
+    bars+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="5" fill="${col}"/>`;
+    bars+=`<text x="${x+bw/2}" y="${y-6}" text-anchor="middle" font-size="12" font-weight="600" fill="#16202E" font-family="Archivo,sans-serif">${v.toFixed(0)}</text>`;
+    (labelPairs[i]||[]).forEach((ln,k)=>{bars+=`<text x="${x+bw/2}" y="${base+16+k*12}" text-anchor="middle" font-size="10.5" fill="#4A586B" font-family="Archivo,sans-serif">${ln}</text>`;});
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" style="max-height:250px" preserveAspectRatio="xMidYMid meet">${g}${bars}</svg>`;
+}
+
+document.getElementById('hCurso').textContent=D.meta.curso;
+document.getElementById('idGrid').innerHTML=
+  `<div><span class="idl">Establecimiento</span><span class="idv">${D.meta.colegio}</span></div>`+
+  `<div><span class="idl">RBD · Curso</span><span class="idv">${D.meta.rbd} · ${D.meta.curso}</span></div>`+
+  `<div><span class="idl">Docente</span><span class="idv">${D.meta.docente}</span></div>`+
+  `<div><span class="idl">Estudiantes</span><span class="idv">${D.meta.n}</span></div>`+
+  `<div><span class="idl">Prueba</span><span class="idv">${D.meta.prueba}</span></div>`+
+  `<div><span class="idl">Generado</span><span class="idv">${D.meta.fecha}</span></div>`;
+
+function renderPan(){
+  const nv=D.niveles, n=D.meta.n;
+  const ejeMin=D.ejes[D.ejeProm.indexOf(Math.min(...D.ejeProm))], ejeMax=D.ejes[D.ejeProm.indexOf(Math.max(...D.ejeProm))];
+  const reds=D.questions.filter(q=>q.sem==='R').length, yellows=D.questions.filter(q=>q.sem==='A').length;
+  document.getElementById('panContext').innerHTML=
+    `<b>Cómo leer esta evaluación.</b> El DIA de Monitoreo Intermedio evalúa los OA de <b>término</b> de 4° básico. Por eso varios OA aún no han sido abordados y otros están en desarrollo. A la fecha de aplicación (${D.meta.fecha}), el curso ha trabajado principalmente el eje de <b>Números y Operaciones</b> y <b>simetría</b>: los ejes y OA aún no enseñados deben leerse como <b>línea base</b>, no como déficit.`;
+  document.getElementById('kpis').innerHTML=
+    `<div class="kpi g"><div class="n">${Math.round(100*nv.III/n)}%</div><div class="l">Nivel III · Satisfactorio (${nv.III})</div></div>`+
+    `<div class="kpi y"><div class="n">${Math.round(100*nv.II/n)}%</div><div class="l">Nivel II · Intermedio (${nv.II})</div></div>`+
+    `<div class="kpi ${nv.I?'r':''}"><div class="n">${Math.round(100*nv.I/n)}%</div><div class="l">Nivel I · Insatisfactorio (${nv.I})</div></div>`+
+    `<div class="kpi acc"><div class="n">${D.promGlobal}%</div><div class="l">Logro global del curso</div></div>`+
+    `<div class="kpi r"><div class="n">${reds+yellows}</div><div class="l">Indicadores descendidos &lt;80% (${reds} rojos · ${yellows} amarillos)</div></div>`;
+  document.getElementById('donutBox').innerHTML=donutSVG([nv.III,nv.II,nv.I],LVLC);
+  document.getElementById('panTxt').innerHTML=
+    `<p>Según la clasificación oficial del DIA, el curso se reparte en <b>${Math.round(100*nv.III/n)}% en Nivel III</b> (satisfactorio) y <b>${Math.round(100*nv.II/n)}% en Nivel II</b> (intermedio), sin estudiantes en Nivel I. La mitad del curso alcanza los OA de término de año de forma <b>parcial</b>, lo esperable dado que varios OA aún están en desarrollo o no han sido abordados.</p>`+
+    `<p>El eje más logrado es <b>${ejeMax}</b> y el más descendido es <b>${ejeMin}</b>. La diferencia entre ejes es moderada (${Math.min(...D.ejeProm).toFixed(0)}–${Math.max(...D.ejeProm).toFixed(0)}%): resultados relativamente homogéneos.</p>`;
+  document.getElementById('lvldefs').innerHTML=
+    `<div class="lvldef n3"><div class="lt">Satisfactorio · Nivel III</div><div class="ld">Logran de forma completa los aprendizajes evaluados del nivel. Muestran una base sólida para seguir aprendiendo.</div></div>`+
+    `<div class="lvldef n2"><div class="lt">Intermedio · Nivel II</div><div class="ld">Alcanzan los objetivos de manera parcial. Necesitan apoyo o refuerzo en ciertos temas o ejes.</div></div>`+
+    `<div class="lvldef n1"><div class="lt">Insatisfactorio · Nivel I</div><div class="ld">No alcanzan los aprendizajes mínimos esperados. Falta base para asimilar los contenidos que vienen más adelante.</div></div>`;
+  document.getElementById('panNote').innerHTML=
+    `<b>Sobre el nivel de logro.</b> La clasificación en Nivel I, II y III proviene directamente del informe oficial del DIA (Agencia de Calidad de la Educación), que usa su propia metodología y <b>no</b> corresponde a un corte por porcentaje de logro global. Por eso un estudiante puede tener un % de logro bajo el 60% y aun así clasificar en Nivel II. El semáforo de color (verde ≥80% · amarillo 60–79% · rojo &lt;60%) se aplica únicamente a los <b>porcentajes de logro</b> (por eje, pregunta y unidad), no a la clasificación de nivel del estudiante. Los rangos del semáforo coinciden con los tramos de la Agencia de Calidad y con los usados en JUMP Math.`;
+  document.getElementById('ejeNote').innerHTML=
+    `A la fecha del monitoreo el curso ha trabajado principalmente el eje de <b>Números y Operaciones</b> (y simetría). Los ejes con menor logro incluyen OA aún no enseñados, por lo que su resultado refleja sobre todo <b>contenido en desarrollo</b>, no necesariamente una dificultad.`;
+}
+function renderEje(){
+  const labels=D.ejes.map(e=>EJELAB[e]||[e]);
+  document.getElementById('ejeBox').innerHTML=barsSVG(D.ejeProm,labels);
+}
+function renderEst(){
+  let r=D.students.map((s,i)=>`<tr><td class="c">${i+1}</td><td>${s.n}</td>`+
+    ['nyo','pa','geo','med','dyp'].map(k=>`<td class="c"><span class="pct ${s[k]>=80?'V':s[k]>=60?'A':'R'}">${s[k]}</span></td>`).join('')+
+    `<td class="c"><b>${s.g}</b></td><td><span class="nv ${nvcls(s.lv)}">${nvtxt(s.lv)}</span></td></tr>`).join('');
+  document.getElementById('tEst').innerHTML=
+    `<thead><tr><th class="c">N°</th><th>Estudiante</th>`+EJESHORT.map(e=>`<th class="c">${e}</th>`).join('')+`<th class="c">Global</th><th>Nivel DIA</th></tr></thead>`+
+    `<tbody>${r}<tr class="avg"><td></td><td>Promedio general curso</td>`+
+    D.ejeProm.map(p=>`<td class="c">${p.toFixed(0)}%</td>`).join('')+
+    `<td class="c">${D.promGlobal}%</td><td></td></tr></tbody>`;
+}
+let indF='all', indH='all';
+function renderInd(){
+  const qs=[...D.questions].filter(q=>(indF==='all'||q.sem===indF)&&(indH==='all'||q.hab===indH));
+  let rows='';
+  D.ejes.forEach(eje=>{
+    const g=qs.filter(q=>q.eje===eje);if(!g.length)return;
+    rows+=`<tr class="ejehdr"><td colspan="5">${eje}</td></tr>`;
+    g.sort((a,b)=>a.q-b.q).forEach(q=>{
+      rows+=`<tr><td class="c oacode">P${q.q}</td><td class="oacode">OA${q.oa}</td>`+
+        `<td>${q.ind}<span class="tag hab">${q.hab}</span></td>`+
+        `<td class="c"><span class="pct ${q.sem}">${q.pct}%</span></td>`+
+        `<td class="c" style="font-size:11px;color:var(--ink-soft)">${q.tipo}</td></tr>`;
+    });
+  });
+  if(!rows) rows=`<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:18px">No hay preguntas con estos filtros.</td></tr>`;
+  document.getElementById('tInd').innerHTML=
+    `<thead><tr><th class="c">Preg.</th><th>OA</th><th>Indicador de evaluación · habilidad</th><th class="c">% logro</th><th class="c">Tipo</th></tr></thead><tbody>${rows}</tbody>`;
+}
+function renderCru(){
+  document.getElementById('planNote').innerHTML=
+    `<b>Referencia según Plan Anual.</b> Al Monitoreo Intermedio (agosto), el curso debería tener trabajado el <b>Tomo 4.1</b> e iniciando el <b>Tomo 4.2</b>. En este curso, a la fecha se registran evaluaciones de las unidades de Números y Operaciones (Series, Valor posicional, Multiplicar, Dividir) y de Figuras (simetría). Ajustar según el Plan Anual efectivo del establecimiento.`;
+  let g='';let curT=null;
+  D.coverage.forEach(c=>{
+    if(c.tomo!==curT){curT=c.tomo;g+=`<div class="tomohdr">Tomo ${c.tomo}</div>`;}
+    const on=c.status==='res';
+    g+=`<div class="cell ${on?'on':'off'}">`+
+       `${on&&c.pct!=null?`<span class="pc">${c.pct}%</span>`:''}`+
+       `<div class="u">${c.u}</div><div class="lb">${c.label}</div>`+
+       `<span class="st">${on?'Con resultados':'Sin registro'}</span></div>`;
+  });
+  document.getElementById('covGrid').innerHTML=g;
+  const cov=D.coverage.filter(c=>c.status==='res').map(c=>c.tomo+' '+c.u).join(' · ');
+  document.getElementById('covNote').innerHTML=
+    `<b>Unidades con evaluación registrada:</b> ${cov}. <b>Sin registro de resultados</b> significa que no hay evaluación cargada a la fecha del DIA; puede corresponder a una unidad aún no trabajada por cronograma, trabajada sin registrar, o con prueba pendiente de aplicación o de carga. La asesora debe precisar el caso con la docente antes de concluir.`;
+  const rem=D.recs.filter(r=>r.estado==='remediar');
+  document.getElementById('crossCallout').innerHTML=
+    `De los <b>${D.recs.length} indicadores descendidos</b> (logro bajo 80%: <b>rojos</b> &lt;60% e <b>intermedios</b> 60–79%), solo <b>${rem.length} corresponden a unidades JUMP ya trabajadas</b> `+
+    `(P${rem.map(r=>r.q).join(', P')}) → prioridad real de remediación. Los otros <b>${D.recs.length-rem.length}</b> mapean a unidades JUMP aún no abordadas `+
+    `(Unidades métricas y tiempo del 4.1, y Problemas, Fracciones, Decimales, Área y volumen, Ángulos y coordenadas y Diagramas del 4.2): sus resultados bajos son <b>esperables</b> y la acción es de <b>secuenciación</b>. `+
+    `Varios de estos OA corresponden además a <b>conocimientos previos de 3° básico</b> (p. ej. rotación P26, relojes P13, gráfico de barra P31): conviene articular.`;
+  let rows=D.recs.map(r=>`<tr><td class="c oacode">P${r.q}</td><td class="oacode">OA${r.oa}</td>`+
+    `<td>${r.ind}</td><td class="c"><span class="pct ${r.sem}">${r.pct}%</span></td>`+
+    `<td style="font-size:11.5px">${r.units}</td>`+
+    `<td class="c"><span class="cross-est ${r.estado==='remediar'?'rem':'esp'}">${r.estado==='remediar'?'Trabajada → remediar':'No abordada → secuenciar'}</span></td></tr>`).join('');
+  document.getElementById('tCross').innerHTML=
+    `<thead><tr><th class="c">Preg.</th><th>OA</th><th>Indicador</th><th class="c">% DIA</th><th>Unidad JUMP</th><th class="c">Estado</th></tr></thead><tbody>${rows}</tbody>`;
+}
+function parseAct(base){
+  const marker='Ejemplos de actividades';
+  const i=base.indexOf(marker);
+  if(i<0) return {general:base.trim(), act:null};
+  const general=base.slice(0,i).trim();
+  const rest=base.slice(i);
+  const grab=re=>{const m=rest.match(re);return m?m[1].replace(/\s+/g,' ').trim():'';};
+  const mat=grab(/Materiales:\s*([\s\S]*?)(?=Clase 1|Clase 2|Comprobación|$)/);
+  const c1=grab(/Clase 1[^:]*:\s*([\s\S]*?)(?=Clase 2|Comprobación|$)/);
+  const c2=grab(/Clase 2[^:]*:\s*([\s\S]*?)(?=Comprobación|$)/);
+  const comp=grab(/Comprobación:\s*([\s\S]*?)$/);
+  return {general, act:{mat,c1,c2,comp}};
+}
+function actTable(a){
+  let rows='';
+  if(a.mat) rows+=`<tr><td class="k">Materiales</td><td>${a.mat}</td></tr>`;
+  if(a.c1) rows+=`<tr><td class="k">Clase 1</td><td>${a.c1}</td></tr>`;
+  if(a.c2) rows+=`<tr><td class="k">Clase 2</td><td>${a.c2}</td></tr>`;
+  if(a.comp) rows+=`<tr><td class="k">Comprobación</td><td>${a.comp}</td></tr>`;
+  if(!rows) return '';
+  return `<div class="act"><div class="ah">Actividades para el inicio de al menos dos clases</div><table><tbody>${rows}</tbody></table></div>`;
+}
+let recF='all';
+function renderRec(){
+  const list=D.recs.filter(r=> recF==='all'?true : recF==='rem'?r.estado==='remediar' : recF==='esp'?r.estado==='esperado' : r.sem===recF);
+  document.getElementById('recList').innerHTML=list.map(r=>{
+    const estLabel=r.estado==='remediar'?'<span class="cross-est rem">Prioritario · unidad ya trabajada</span>':'<span class="cross-est esp">No abordado aún · secuenciar</span>';
+    const p=parseAct(r.base||'');
+    return `<details class="rec" ${r.estado==='remediar'?'open':''}>`+
+      `<summary><span class="qn">P${r.q}</span><span class="rind">${r.ind}<div class="roa">OA${r.oa} · logro DIA ${r.pct}%</div></span>`+
+      `<span class="pct ${r.sem}">${r.pct}%</span><span class="arrow">▸</span></summary>`+
+      `<div class="body"><div class="meta">${estLabel}<span class="uchip">JUMP ${r.units}</span></div>`+
+      `<h4>Orientación base</h4><div class="base">${p.general}</div>`+
+      (p.act?actTable(p.act):'')+
+      (r.plus?`<h4>Profundización</h4><div class="plus">${r.plus}</div>`:'')+
+      `</div></details>`;
+  }).join('');
+}
+
+const R={pan:()=>{renderPan();renderEje();},est:renderEst,ind:renderInd,cru:renderCru,rec:renderRec,exp:()=>{}};
+const SECS=['pan','est','ind','cru','rec','exp'];
+let currentSec='pan';
+function show(sec){
+  clear(); currentSec=sec;
+  SECS.forEach(s=>document.getElementById('sec'+s[0].toUpperCase()+s.slice(1)).classList.toggle('hidden',s!==sec));
+  document.querySelectorAll('.secbtn').forEach(b=>b.classList.toggle('active',b.dataset.sec===sec));
+  R[sec]();
+}
+document.querySelectorAll('.secbtn').forEach(b=>b.onclick=()=>show(b.dataset.sec));
+document.getElementById('fIndNivel').onclick=e=>{if(!e.target.dataset.f)return;indF=e.target.dataset.f;document.querySelectorAll('#fIndNivel .fbtn').forEach(x=>x.classList.toggle('active',x===e.target));renderInd();};
+document.getElementById('fIndHab').onclick=e=>{if(!e.target.dataset.h)return;indH=e.target.dataset.h;document.querySelectorAll('#fIndHab .fbtn').forEach(x=>x.classList.toggle('active',x===e.target));renderInd();};
+document.getElementById('fRec').onclick=e=>{if(!e.target.dataset.f)return;recF=e.target.dataset.f;document.querySelectorAll('#fRec .fbtn').forEach(x=>x.classList.toggle('active',x===e.target));renderRec();};
+
+// --- Paso 1: maqueta de carga de archivos ---
+const SOURCES=[
+  {id:'dia', ic:'📄', t:'Informe oficial DIA', d:'Resultados por nivel, eje y pregunta (PDF).', req:true, accept:'.pdf'},
+  {id:'est', ic:'👥', t:'Resultados por estudiante', d:'% por eje y nivel de cada estudiante (PDF o planilla).', req:true, accept:'.pdf,.xlsx,.csv'},
+  {id:'rec', ic:'🧭', t:'Recomendaciones por indicador', d:'Orientaciones y unidad JUMP por indicador (Excel).', req:true, accept:'.xlsx'},
+  {id:'jump', ic:'📊', t:'Seguimiento de evaluaciones JUMP', d:'Controles y pruebas por unidad, % de logro (Excel).', req:true, accept:'.xlsx'},
+  {id:'plan', ic:'🗓️', t:'Plan Anual del curso', d:'Secuencia de unidades por fecha (opcional).', req:false, accept:'.xlsx,.pdf'},
+];
+const loaded={};
+function updateGen(){
+  const req=SOURCES.filter(s=>s.req).map(s=>s.id);
+  const ok=req.every(id=>loaded[id]);
+  const btn=document.getElementById('genBtn'), hint=document.getElementById('srchint');
+  btn.disabled=!ok;
+  hint.textContent=ok?'Archivos obligatorios cargados — listo para generar.':`Faltan ${req.filter(id=>!loaded[id]).length} archivo(s) obligatorio(s) por cargar`;
+}
+function buildSources(){
+  document.getElementById('srcgrid').innerHTML=SOURCES.map(s=>
+    `<label class="srcslot ${s.req?'':'opt'}" data-id="${s.id}">`+
+    `<input type="file" accept="${s.accept}" style="display:none">`+
+    `<span class="sic">${s.ic}</span>`+
+    `<span><span class="st2">${s.t} <span class="req">*</span></span>`+
+    `<span class="sd">${s.d}</span>`+
+    `<span class="sfile"></span>`+
+    `<span class="spill">${s.req?'Obligatorio · pendiente':'Opcional · pendiente'}</span></span></label>`).join('');
+  document.querySelectorAll('.srcslot input').forEach(inp=>{
+    inp.onchange=e=>{
+      const slot=e.target.closest('.srcslot'), id=slot.dataset.id;
+      if(e.target.files&&e.target.files.length){
+        loaded[id]=e.target.files[0].name;
+        slot.classList.add('ok');
+        slot.querySelector('.sfile').textContent='✓ '+e.target.files[0].name;
+        slot.querySelector('.spill').textContent='Cargado';
+      }
+      updateGen();
+    };
+  });
+}
+buildSources(); updateGen();
+document.getElementById('genBtn').onclick=()=>{ document.getElementById('secnav').scrollIntoView({behavior:'smooth'}); show('pan'); };
+
+// --- Paso final: exportar PDF (sin dependencias: diálogo de impresión del navegador) ---
+function downloadPDF(){
+  ['Pan','Est','Ind','Cru','Rec'].forEach(S=>document.getElementById('sec'+S).classList.remove('hidden'));
+  renderPan();renderEje();renderEst();renderInd();renderCru();renderRec();
+  document.querySelectorAll('#recList details').forEach(d=>d.open=true);
+  setTimeout(()=>window.print(),120);
+}
+document.getElementById('pdfBtn').onclick=downloadPDF;
+window.addEventListener('afterprint',()=>show(currentSec==='exp'?'exp':currentSec||'pan'));
+
+show('pan');
+
+// --- Integración con el backend (Paso 1 real) ---
+// `app.js` reemplaza la maqueta por la carga a Cloud Storage y la llamada a
+// la Cloud Function de ingesta. Se expone lo que necesita para engancharse.
+// Sin `firebase-config.js` el archivo sigue funcionando solo, con los datos
+// de ejemplo y la maqueta original: es la condición de la guía §1.
+window.InformeDIA = { SOURCES, loaded, updateGen, show, D };
+</script>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

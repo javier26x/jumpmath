@@ -1,0 +1,38 @@
+rules_version = '2';
+
+// Cada docente escribe sólo bajo su propio uid. Se acotan tipo y tamaño en la
+// regla y no sólo en la interfaz: el Paso 1 es una pantalla web y cualquiera
+// puede llamar al endpoint de subida por fuera de ella.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /cursos/{uid}/{cursoId}/{ranura}/{archivo} {
+
+      function esDuenio() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+
+      function ranuraValida() {
+        return ranura in ['dia_oficial', 'estudiantes', 'recomendaciones',
+                          'seguimiento', 'plan_anual'];
+      }
+
+      function tipoValido() {
+        return request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches(
+               'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+          || request.resource.contentType.matches('application/vnd.ms-excel')
+          || request.resource.contentType.matches('text/csv');
+      }
+
+      allow read, delete: if esDuenio();
+      allow write: if esDuenio()
+        && ranuraValida()
+        && tipoValido()
+        && request.resource.size < 25 * 1024 * 1024;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

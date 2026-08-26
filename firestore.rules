@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// Los informes contienen nombres y resultados de estudiantes: cada docente
+// accede sólo a los cursos que subió. La escritura del objeto `D` queda
+// reservada a las Cloud Functions, que entran con credenciales de servicio y
+// no pasan por estas reglas: el cliente nunca puede inventar un `D`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /cursos/{cursoDoc} {
+      function esDuenio() {
+        return request.auth != null && resource.data.uid == request.auth.uid;
+      }
+
+      allow read: if esDuenio();
+      allow create, update, delete: if false;
+
+      match /versiones/{versionId} {
+        allow read: if request.auth != null
+          && get(/databases/$(database)/documents/cursos/$(cursoDoc)).data.uid == request.auth.uid;
+        allow write: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

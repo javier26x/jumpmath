@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt ruff
+
+      - name: Lint
+        run: ruff check functions/ scripts/ tests/
+
+      - name: Regenerar los fixtures sintéticos
+        # Se regeneran en cada corrida: si el generador y los parsers se
+        # separan, el test de extremo a extremo debe verlo.
+        run: python tests/generar_fixtures.py
+
+      - name: Tests
+        run: pytest
+
+      - name: Validar la configuración de Firebase
+        run: |
+          python -c "import json; [json.load(open(f)) for f in ('firebase.json', '.firebaserc', 'firestore.indexes.json')]"
+          bash scripts/sync_plantilla.sh

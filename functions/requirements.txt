@@ -1,0 +1,10 @@
+# Cloud Functions for Firebase · Python 3.12 (2ª generación)
+firebase-functions==0.4.2
+firebase-admin==6.5.0
+
+# Ingesta
+pdfplumber==0.11.4      # texto y tablas del informe oficial DIA
+openpyxl==3.1.5         # planillas .xlsx del colegio
+
+# OCR opcional para PDF escaneados (ver JUMPDIA_DOCAI_PROCESSOR)
+google-cloud-documentai==2.31.0

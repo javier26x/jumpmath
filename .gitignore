@@ -1,0 +1,25 @@
+# Copia generada por scripts/sync_plantilla.sh (la fuente es public/)
+functions/plantilla/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv-tools/
+.pytest_cache/
+venv/
+
+# Firebase
+.firebase/
+*.log
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Node
+node_modules/
+
+# Datos reales de establecimientos: nunca se versionan (contienen datos
+# personales de estudiantes). Los fixtures sintéticos sí, por su prefijo.
+datos/
+*.local.xlsx

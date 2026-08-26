@@ -1,0 +1,3 @@
+-r functions/requirements.txt
+pytest==8.3.3
+reportlab==4.2.5        # sólo para generar los PDF sintéticos de los tests
