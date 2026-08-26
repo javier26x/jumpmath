@@ -66,29 +66,119 @@ async function arrancar() {
   const bucket = storage.getStorage(app);
   const fns = functions.getFunctions(app, config.region);
 
-  const usuario = await asegurarSesion(auth, sesion);
-  document.getElementById("srchint").textContent =
-    `Sesión iniciada como ${usuario.email || usuario.uid}. ` +
-    "Faltan 4 archivo(s) obligatorio(s) por cargar.";
+  // Si se volvió de un acceso por redirección, hay que consumir el resultado
+  // antes de decidir qué pintar; si no, el primer render diría "sin sesión".
+  await auth.getRedirectResult(sesion).catch(reportarFallo);
 
-  conectarCasilleros(storage, bucket, usuario);
-  conectarBotonGenerar(functions, fns, usuario);
+  const acceso = crearBotonAcceso(() => iniciarSesion(auth, sesion));
+  let conectado = false;
+
+  auth.onAuthStateChanged(sesion, (usuario) => {
+    if (!usuario) {
+      acceso.pedirAcceso();
+      return;
+    }
+    acceso.confirmarAcceso(usuario);
+    // El observador se dispara también al refrescar el token: sin esta guarda
+    // se volverían a enganchar los manejadores sobre los mismos elementos.
+    if (conectado) return;
+    conectado = true;
+    conectarCasilleros(storage, bucket, usuario);
+    conectarBotonGenerar(functions, fns, usuario);
+  });
 }
 
-/** Deja al docente autenticado, reutilizando la sesión si ya existe. */
-function asegurarSesion(auth, sesion) {
-  return new Promise((resolve, reject) => {
-    auth.onAuthStateChanged(sesion, async (usuario) => {
-      if (usuario) return resolve(usuario);
-      try {
-        const proveedor = new auth.GoogleAuthProvider();
-        const credencial = await auth.signInWithPopup(sesion, proveedor);
-        resolve(credencial.user);
-      } catch (error) {
-        reject(error);
-      }
+/**
+ * Inicia sesión, siempre desde un clic del docente.
+ *
+ * El popup debe abrirse dentro del gesto que lo pidió: invocado al cargar la
+ * página, el navegador lo bloquea sin excepción (`auth/popup-blocked`). Si aun
+ * así lo bloquea —hay navegadores y webviews que los prohíben por completo— se
+ * cae a la redirección, que no necesita ventana nueva.
+ */
+async function iniciarSesion(auth, sesion) {
+  const proveedor = new auth.GoogleAuthProvider();
+  try {
+    await auth.signInWithPopup(sesion, proveedor);
+  } catch (error) {
+    const codigo = error?.code || "";
+    // Cerrar la ventana es una decisión del docente, no un fallo que reportar.
+    if (codigo === "auth/popup-closed-by-user" || codigo === "auth/cancelled-popup-request") {
+      return;
+    }
+    if (
+      codigo === "auth/popup-blocked" ||
+      codigo === "auth/operation-not-supported-in-this-environment"
+    ) {
+      await auth.signInWithRedirect(sesion, proveedor);
+      return;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Pone el botón de acceso en el Paso 1 y bloquea los casilleros hasta que haya
+ * sesión: subir un archivo sin `uid` lo rechazan las reglas de Storage, y es
+ * mejor no ofrecer la acción que dejar que falle.
+ */
+function crearBotonAcceso(alHacerClic) {
+  const acciones = document.querySelector(".srcactions");
+  const generar = document.getElementById("genBtn");
+  const pista = document.getElementById("srchint");
+
+  const boton = document.createElement("button");
+  boton.className = "genbtn";
+  boton.type = "button";
+  boton.textContent = "Iniciar sesión con Google";
+  boton.onclick = async () => {
+    boton.disabled = true;
+    boton.textContent = "Abriendo acceso…";
+    try {
+      await alHacerClic();
+    } catch (error) {
+      reportarFallo(error);
+    } finally {
+      boton.disabled = false;
+      boton.textContent = "Iniciar sesión con Google";
+    }
+  };
+  acciones.insertBefore(boton, generar);
+
+  const identidad = document.createElement("span");
+  identidad.className = "mockflag";
+  identidad.hidden = true;
+  document.querySelector(".srchead")?.appendChild(identidad);
+
+  const bloquearCasilleros = (bloqueado) => {
+    document.querySelectorAll(".srcslot").forEach((slot) => {
+      slot.style.opacity = bloqueado ? ".45" : "";
+      slot.style.pointerEvents = bloqueado ? "none" : "";
+      const entrada = slot.querySelector('input[type="file"]');
+      if (entrada) entrada.disabled = bloqueado;
     });
-  });
+  };
+
+  return {
+    pedirAcceso() {
+      boton.hidden = false;
+      generar.hidden = true;
+      identidad.hidden = true;
+      bloquearCasilleros(true);
+      pista.style.color = "";
+      pista.textContent = "Inicie sesión para subir los archivos de su curso.";
+    },
+    confirmarAcceso(usuario) {
+      boton.hidden = true;
+      generar.hidden = false;
+      identidad.hidden = false;
+      identidad.textContent = usuario.email || usuario.uid;
+      bloquearCasilleros(false);
+      pista.style.color = "";
+      // `updateGen` es el dueño de este texto: dice qué archivos faltan.
+      proto.updateGen();
+    },
+  };
 }
 
 /**
