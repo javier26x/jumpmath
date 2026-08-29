@@ -41,48 +41,55 @@ def aciertos_por_eje(alumno: dict) -> list[float]:
 # --- Informe oficial DIA (PDF) -------------------------------------------
 
 
-def escribir_dia_pdf(destino: pathlib.Path) -> None:
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4, landscape
-    from reportlab.lib.styles import getSampleStyleSheet
+def escribir_dia_pdf(destino: pathlib.Path, questions=None, meta=None) -> None:
+    """Escribe un PDF con la disposición del informe oficial real.
+
+    Importa reproducir la **forma**, no sólo los datos: la Tabla 1 no tiene
+    rejilla —es texto en columnas que el parser localiza por coordenadas— y la
+    alternativa correcta viene destacada en negrita. Un fixture con una tabla
+    de bordes dibujados pasaría los tests sin ejercitar nada de eso.
+    """
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-    estilos = getSampleStyleSheet()
-    normal, celda = estilos["Normal"], estilos["BodyText"]
-    celda.fontSize = 6
-    celda.leading = 7
+    questions = questions if questions is not None else D["questions"]
+    meta = meta if meta is not None else D["meta"]
 
-    meta, niveles = D["meta"], D["niveles"]
+    normal = getSampleStyleSheet()["Normal"]
+    celda = ParagraphStyle("celda", parent=normal, fontSize=6.5, leading=8)
+    pct = ParagraphStyle("pct", parent=celda, fontName="Helvetica")
+
     flujo = [
-        Paragraph("Agencia de la Calidad de la Educación", normal),
-        Paragraph("Diagnóstico Integral de Aprendizajes · Monitoreo Intermedio", normal),
-        Paragraph(f"ESTABLECIMIENTO: {meta['colegio']}", normal),
-        Paragraph(f"RBD: {meta['rbd']}", normal),
-        Paragraph(f"CURSO: {meta['curso'].replace(chr(176), chr(176) + ' básico ')}", normal),
-        Paragraph(f"DOCENTE: {meta['docente']}", normal),
-        Paragraph(f"DIRECTOR: {meta['director']}", normal),
-        Paragraph(f"Fecha de aplicación: {meta['fecha']}", normal),
-        Spacer(1, 10),
-        Paragraph("Distribución por Niveles de Aprendizaje", normal),
+        Paragraph("· Diagnóstico Integral de Aprendizajes ·", normal),
+        Paragraph("Informe de Resultados 2026", normal),
+        Paragraph("Prueba de Matemática", normal),
+        Paragraph(f"Establecimiento:{meta['colegio']}", normal),
+        Paragraph(f"RBD:{meta['rbd']}", normal),
+        Paragraph(f"Nombre director o directora: {meta['director']}", normal),
+        Paragraph(f"Nombre docente de la asignatura:{meta['docente']}", normal),
+        Paragraph(f"Curso: {meta['curso'].replace(chr(176), '')}", normal),
+        Paragraph(
+            f"Cantidad de estudiantes que considera este informe: {meta['n']}", normal
+        ),
+        Paragraph(
+            f"Fecha y hora de generación de este informe: {meta['fecha']} 12:31:18", normal
+        ),
+        Paragraph("Monitoreo Intermedio", normal),
+        Spacer(1, 12),
+        Paragraph("Tabla 1. Resultados del curso en cada pregunta de la prueba", normal),
+        Spacer(1, 6),
     ]
-    total = sum(niveles.values())
-    nombres = (("I", "Insatisfactorio"), ("II", "Intermedio"), ("III", "Satisfactorio"))
-    for romano, nombre in nombres:
-        n = niveles[romano]
-        flujo.append(
-            Paragraph(f"Nivel {romano} · {nombre}: {round(100 * n / total)} % ({n})", normal)
-        )
 
-    flujo += [Spacer(1, 10), Paragraph("Resultados por eje temático", normal)]
-    for eje, prom in zip(EJES, D["ejeProm"], strict=True):
-        flujo.append(Paragraph(f"{eje}: {prom:.1f} %", normal))
-
-    flujo += [Spacer(1, 10), Paragraph("Detalle por pregunta", normal)]
     encabezado = [
-        "N° Pregunta", "OA", "Eje", "Habilidad", "Indicador", "% Logro", "Tipo", *COLUMNAS_DIST,
+        Paragraph(f"<b>{h}</b>", celda)
+        for h in (
+            "N° pregunta", "N° OA", "Eje temático", "Habilidad",
+            "Indicador de evaluación", "% respuestas",
+        )
     ]
-    filas = [[Paragraph(f"<b>{h}</b>", celda) for h in encabezado]]
-    for q in D["questions"]:
+    filas = [encabezado]
+    for q in questions:
         filas.append(
             [
                 Paragraph(str(q["q"]), celda),
@@ -90,34 +97,50 @@ def escribir_dia_pdf(destino: pathlib.Path) -> None:
                 Paragraph(q["eje"], celda),
                 Paragraph(q["hab"], celda),
                 Paragraph(q["ind"], celda),
-                Paragraph(f"{q['pct']}", celda),
-                Paragraph(q["tipo"], celda),
-                *[
-                    Paragraph("" if k not in q["dist"] else f"{q['dist'][k]:g}", celda)
-                    for k in COLUMNAS_DIST
-                ],
+                Paragraph(_lineas_distribucion(q), pct),
             ]
         )
 
-    tabla = Table(
-        filas,
-        colWidths=[30, 18, 60, 50, 196, 26, 40, *([27] * len(COLUMNAS_DIST))],
-        repeatRows=1,
-    )
+    tabla = Table(filas, colWidths=[52, 40, 74, 78, 176, 72], repeatRows=1)
     tabla.setStyle(
         TableStyle(
             [
-                ("GRID", (0, 0), (-1, -1), 0.4, colors.black),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
             ]
         )
     )
-    flujo.append(tabla)
+    flujo += [tabla, Spacer(1, 10), Paragraph("Preguntas guía", normal)]
 
     SimpleDocTemplate(
-        str(destino), pagesize=landscape(A4), topMargin=18, bottomMargin=18,
-        leftMargin=16, rightMargin=16,
+        str(destino), pagesize=A4, topMargin=26, bottomMargin=26,
+        leftMargin=30, rightMargin=30,
     ).build(flujo)
+
+
+def _lineas_distribucion(q: dict) -> str:
+    """Columna «% respuestas», con la alternativa correcta en negrita.
+
+    En un ítem de alternativas la clave es la única marca de cuál es la
+    respuesta correcta; se destaca la de mayor porcentaje, que es la que el
+    informe publicado usó como logro del ítem.
+    """
+    dist = {k: v for k, v in q["dist"].items() if k != "clave"}
+    clave_correcta = q["dist"].get("clave")
+    if clave_correcta is None and q["tipo"] == "alternativas":
+        opciones = {k: v for k, v in dist.items() if k != "N"}
+        clave_correcta = max(opciones, key=opciones.get) if opciones else None
+
+    lineas = []
+    for etiqueta in ("RC", "RPC", "RI", "A", "B", "C", "D", "E", "N"):
+        if etiqueta not in dist:
+            continue
+        texto = f"{etiqueta}: {dist[etiqueta]:.2f}%"
+        lineas.append(f"<b>{texto}</b>" if etiqueta == clave_correcta else texto)
+    return "<br/>".join(lineas)
 
 
 # --- Planillas ------------------------------------------------------------
@@ -152,19 +175,6 @@ def escribir_estudiantes(destino: pathlib.Path) -> None:
     _libro("Resultados", filas, destino)
 
 
-def escribir_recomendaciones(destino: pathlib.Path) -> None:
-    filas = [
-        ["Indicador", "OA", "Unidad JUMP", "Recomendación didáctica", "Análisis adicional"]
-    ]
-    for rec in D["recs"]:
-        unidades = " · ".join(
-            f"Tomo {p.split(' · ')[0].strip()} {p.split(' · ')[1].split(' ')[0]}"
-            for p in _partes_unidades(rec["units"])
-        )
-        filas.append([rec["ind"], rec["oa"], unidades, rec["base"], rec["plus"]])
-    _libro("Recomendaciones", filas, destino)
-
-
 def _partes_unidades(units: str) -> list[str]:
     """Parte `"4.1 · U2 Nombre ✓ 85% · 4.2 · U3 Otro ✗"` en unidades sueltas."""
     tokens, actual = [], []
@@ -176,19 +186,89 @@ def _partes_unidades(units: str) -> list[str]:
     return tokens
 
 
-def escribir_seguimiento(destino: pathlib.Path) -> None:
-    filas = [["Unidad JUMP", "Evaluación", "Promedio de logro", "Estado"]]
-    for cobertura in D["coverage"]:
-        registrada = cobertura["status"] == "res"
-        filas.append(
+def escribir_recomendaciones(destino: pathlib.Path) -> None:
+    """Planilla de recomendaciones con el encabezado real, de dos filas.
+
+    «Unidad JUMP Math» abarca dos columnas y sólo la fila de abajo dice cuál
+    es cada tomo; el cruce con el informe se hace por N° de pregunta.
+    """
+    from openpyxl import Workbook
+
+    libro = Workbook()
+    ws = libro.active
+    ws.title = "4° A"
+    ws.append(["Indicadores que requieren refuerzo - 4° Básico"])
+    ws.append(
+        ["N° de pregunta", "OA evaluado", "Indicador", "% de logro\n4° A",
+         "Unidad JUMP Math", None, "Sugerencias metodológicas y/o didácticas",
+         "Análisis adicional"]
+    )
+    ws.append([None, None, None, None, "Tomo 4.1", "Tomo 4.2", None, None])
+
+    for rec in D["recs"]:
+        unidades = {}
+        for parte in _partes_unidades(rec["units"]):
+            tomo, resto = parte.split(" · ", 1)
+            unidades[tomo.strip()] = resto.split(" ", 1)[0]
+        ws.append(
             [
-                f"Tomo {cobertura['tomo']} · {cobertura['u']} {cobertura['label']}",
-                "Control de unidad",
-                cobertura["pct"] if registrada else "",
-                "Aplicado" if registrada else "Pendiente",
+                rec["q"], rec["oa"], rec["ind"], None,
+                unidades.get("4.1", "-"), unidades.get("4.2", "-"),
+                rec["base"], rec["plus"],
             ]
         )
-    _libro("Seguimiento", filas, destino)
+    libro.save(destino)
+
+
+#: Preguntas por evaluación en el fixture. Con 26 estudiantes da 1 300 celdas,
+#: de modo que cualquier porcentaje entero se alcanza con un número exacto de
+#: aciertos y el fixture reproduce la cobertura publicada al decimal.
+PREGUNTAS_POR_CONTROL = 50
+
+
+def escribir_seguimiento(destino: pathlib.Path) -> None:
+    """Libro de seguimiento con el formato real: una hoja por evaluación.
+
+    Cada hoja es la corrección ítem a ítem, así que el porcentaje de la unidad
+    hay que calcularlo. Se incluye a propósito lo que trae el archivo del
+    colegio y confunde a un parser ingenuo: la fila «Total por pregunta» al pie
+    de la nómina, y hojas preparadas pero sin aplicar, que deben quedar como
+    unidades sin registro y no como un 0 %.
+    """
+    from openpyxl import Workbook
+
+    libro = Workbook()
+    libro.remove(libro.active)
+    nombres = [alumno["n"] for alumno in D["students"]]
+
+    for cobertura in D["coverage"]:
+        titulo = f"{'Prueba' if cobertura['status'] == 'res' else 'Control'} Unidad "
+        titulo += f"{cobertura['u'][1:]}: {cobertura['label']}"
+        ws = libro.create_sheet(f"{cobertura['tomo']} {cobertura['u']}"[:31])
+        ws.append([titulo])
+        ws.append([])
+        ws.append([None, None, "Preguntas"])
+        ws.append(
+            ["N°", "Estudiante", *range(1, PREGUNTAS_POR_CONTROL + 1), "Total", "% logro"]
+        )
+
+        if cobertura["status"] != "res":
+            # Hoja lista pero sin aplicar: la nómina va vacía.
+            for i, nombre in enumerate(nombres, 1):
+                ws.append([i, nombre])
+            ws.append([None, "Total por pregunta"])
+            continue
+
+        celdas = len(nombres) * PREGUNTAS_POR_CONTROL
+        restantes = round(cobertura["pct"] / 100 * celdas)
+        for i, nombre in enumerate(nombres, 1):
+            aciertos = min(restantes, PREGUNTAS_POR_CONTROL)
+            restantes -= aciertos
+            marcas = [1] * aciertos + [0] * (PREGUNTAS_POR_CONTROL - aciertos)
+            ws.append([i, nombre, *marcas, sum(marcas), sum(marcas) / PREGUNTAS_POR_CONTROL])
+        ws.append([None, "Total por pregunta", *([0] * PREGUNTAS_POR_CONTROL)])
+
+    libro.save(destino)
 
 
 def main() -> None:

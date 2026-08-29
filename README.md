@@ -28,7 +28,7 @@ archivos del colegio  ──▶  Cloud Storage  ──▶  Cloud Function (Pytho
 | `public/index.html` | El informe: es a la vez la app y la plantilla que rellena el backend. |
 | `public/app.js` | Conecta el Paso 1 con Storage y con la función de ingesta. |
 | `scripts/ingesta_local.py` | Corre la ingesta sin Firebase, para depurar planillas. |
-| `tests/` | 82 tests, incluida la reconstrucción completa del informe 4° A. |
+| `tests/` | 97 tests, incluida la reconstrucción completa del informe 4° A. |
 
 ## Empezar
 
@@ -68,19 +68,29 @@ tests/test_pipeline.py::test_reconstruye_el_informe_publicado
 Los archivos reales no están en el repositorio: traen nombres y resultados de
 estudiantes identificables.
 
-### Dos reglas que no son obvias
+### Tres reglas que no son obvias
 
 Ambas se descubrieron contrastando contra el informe publicado y están fijadas
 por tests; conviene no “simplificarlas”.
 
-**1 · El % de una pregunta y su aporte al eje son números distintos.**
+**1 · La alternativa correcta es la que va en negrita, no la más marcada.**
+El informe destaca la clave en negrita, pero el PDF no usa una fuente bold:
+simula la negrita rellenando y además trazando el glifo, y el único rastro es
+que esos caracteres fijan un color de trazo RGB donde el resto deja el gris por
+defecto. En 4° A de Escuela Santa Rosa, **7 de las 31 preguntas** tienen la
+clave fuera de la alternativa más elegida; la P7 la marcó el 9,68 % del curso
+mientras dos distractores empataban en 38,71 %. Resolver por el máximo publica
+un 39 % donde va un 10 %. Ver `_es_negrita` en
+`functions/jumpdia/parsers/dia_oficial.py`.
+
+**2 · El % de una pregunta y su aporte al eje son números distintos.**
 La P5 de 4° A se publica como **38 %** (respuestas completamente correctas),
 pero pesa **50 %** en el promedio de Números y operaciones, porque la Agencia
 puntúa con medio punto la respuesta parcialmente correcta (23 % del curso).
 Usar el 38 % en el promedio deja el eje en 75,6 % en vez del 76,4 % oficial.
 Ver `logro_mostrado` y `logro_puntaje` en `functions/jumpdia/reglas.py`.
 
-**2 · El global del estudiante se calcula sobre aciertos, no sobre los
+**3 · El global del estudiante se calcula sobre aciertos, no sobre los
 porcentajes por eje ya redondeados.** Ponderando los enteros que muestra el
 informe, 3 de los 26 estudiantes de 4° A se desvían en un punto:
 
@@ -111,21 +121,49 @@ un número mal.
 
 ## Formato esperado de cada archivo
 
-Los parsers no fijan posiciones de columna: buscan la fila de encabezado que
-mejor casa con un conjunto de sinónimos, así que toleran que cambie el orden,
-que haya filas de título arriba y que varíe la redacción del encabezado.
+Los parsers no fijan posiciones: la tabla del PDF se localiza por coordenadas
+de palabra y las planillas por la fila de encabezado que mejor casa con un
+conjunto de sinónimos. Toleran cambios de orden, filas de título arriba y
+variaciones de redacción.
 
-| Archivo | Columnas que necesita (o sinónimos) |
+| Archivo | Qué se lee |
 |---|---|
-| **Informe oficial DIA** (PDF) | Tabla por pregunta con `N° Pregunta` e `Indicador`; se aprovechan además `OA`, `Eje`, `Habilidad`, `% Logro`, `Tipo` y la distribución (`A`–`E`, `RC`, `RPC`, `RI`, `N`). Fuera de la tabla: establecimiento, RBD, curso, docente, director, fecha y el conteo por nivel. |
-| **Resultados por estudiante** (xlsx/PDF) | `Estudiante`, una columna por eje, `Nivel de aprendizaje`. Opcionales pero recomendadas: `Puntaje obtenido` y `Global`. |
-| **Recomendaciones por indicador** (xlsx) | `Indicador`, `Unidad JUMP`, `Recomendación`. Opcional: `Análisis adicional`, `OA`. |
-| **Seguimiento JUMP** (xlsx) | `Unidad JUMP`, `Promedio de logro`. Opcional: `Estado` (para distinguir *pendiente* de *sin resultado*). |
+| **Informe oficial DIA** (PDF) | Del encabezado: establecimiento, RBD, curso, docente, director, fecha y N° de estudiantes. De la «Tabla 1»: N° de pregunta, OA, eje, habilidad, indicador y la distribución de respuestas, con la clave destacada en negrita. |
+| **Resultados por estudiante** (xlsx/PDF) | `Estudiante`, una columna por eje y `Nivel de logro`. Opcionales pero recomendadas: `Puntaje obtenido` y `Global`. |
+| **Recomendaciones por indicador** (xlsx) | `N° de pregunta`, `Indicador`, `Sugerencias` y las columnas `Tomo 4.1` / `Tomo 4.2` del encabezado de dos filas. Opcional: `Análisis adicional`. |
+| **Seguimiento JUMP** (xlsx) | Una hoja por evaluación, con la corrección ítem a ítem. La unidad sale del título de la hoja y el % se calcula. También se acepta el formato resumido de una fila por unidad. |
 | **Plan Anual** (xlsx/PDF, opcional) | `Unidad`, `Mes`/`Fecha`. Si no calza, se ignora sin abortar la ingesta. |
 
 Cuando algo no calza, el error dice qué columna falta, en qué archivo y qué
-sinónimos se aceptan. Las unidades JUMP se reconocen escritas como
-`Tomo 4.1 U2`, `4.1·U2`, `4.1 - Unidad 2` y variantes.
+sinónimos se aceptan.
+
+### Detalles del formato real que condicionan el parser
+
+Se descubrieron abriendo los archivos de un establecimiento y cada uno está
+cubierto por un test:
+
+- **La «Tabla 1» del PDF no tiene rejilla.** Es texto en columnas con celdas
+  que envuelven, así que `extract_tables` no sirve; las columnas se deducen
+  proyectando las palabras sobre el eje horizontal y cortando por los cinco
+  huecos más anchos.
+- **Los Gráficos 1 y 2 son imágenes sin capa de texto**, de modo que del PDF
+  no se pueden leer ni los niveles de logro ni el promedio por eje. Los
+  niveles se agregan desde la nómina —donde vienen ya clasificados por la
+  Agencia, uno por estudiante— y los promedios por eje se calculan desde las
+  preguntas. Contar la clasificación oficial no es recalcularla con cortes de
+  porcentaje, que es lo que la guía prohíbe.
+- **El seguimiento trae una hoja por evaluación**, no una tabla de unidades.
+  Hay unidades con varias evaluaciones (se informa el promedio) y hojas
+  preparadas pero sin aplicar, que deben quedar *sin registro* y no como 0 %.
+  Al pie de cada nómina hay una fila **«Total por pregunta»** con la misma
+  forma que un estudiante: contarla mete la suma de la columna en el promedio.
+- **La unidad de una hoja se resuelve por número y nombre.** El número solo no
+  basta: «Unidad 1» es *Series* en el Tomo 4.1 y *Figuras* en el 4.2. La
+  comparación es por similitud porque las planillas traen erratas
+  («Undades métricas y tiempo» es un caso real).
+- **El encabezado de las recomendaciones ocupa dos filas**: «Unidad JUMP Math»
+  abarca dos columnas y sólo la fila de abajo dice cuál es cada tomo. El cruce
+  con el informe se hace por N° de pregunta, no por el texto del indicador.
 
 ### Un PDF escaneado
 
@@ -202,17 +240,19 @@ detrás de las reglas de seguridad:
 
 ## Lo que falta
 
-- **Los parsers no se han ejercitado contra archivos reales.** Se escribieron
-  contra la especificación de la guía §4 y se prueban con fixtures sintéticos
-  que replican la estructura descrita, porque no se dispuso de un informe
-  oficial DIA ni de las planillas del colegio. El PDF adjunto en
-  `docs/informe_dia_4A_ejemplo.pdf` es la **salida** del prototipo, no una
-  entrada. Al conectar el primer curso real es esperable tener que ampliar los
-  sinónimos de encabezado y los patrones de `parsers/dia_oficial.py`;
-  `scripts/ingesta_local.py` está pensado para esa vuelta.
+- **Los parsers se ejercitaron contra un solo establecimiento.** El pipeline
+  procesa de extremo a extremo los cinco archivos de 4° A de Escuela Santa Rosa
+  (RBD 5583) y los fixtures sintéticos reproducen esa estructura, pero un
+  segundo colegio puede traer variantes de encabezado todavía no vistas.
+  `scripts/ingesta_local.py` está pensado para esa vuelta: procesa un curso sin
+  desplegar nada y muestra el diagnóstico completo.
 - **El OCR de Document AI está declarado pero no conectado**: un informe
   oficial escaneado falla con un diagnóstico claro, no con un informe vacío.
-- **`recs[].plus` se lee de la planilla**, como indica la guía §4. Varios de
-  los textos del informe 4° A parecen redactados a partir de los datos del
+- **`recs[].plus` se lee de la planilla**, como indica la guía §4, de una
+  columna de análisis que es opcional. La planilla de Escuela Santa Rosa no la
+  trae, así que ese bloque sale vacío en su informe. Varios de los textos del
+  informe 4° A de referencia parecen redactados a partir de los datos del
   propio DIA (distractores, caída respecto del control JUMP); si esa
   generación debe automatizarse, es un módulo aparte.
+- **La lógica de navegador no tiene tests automáticos.** `public/app.js` se
+  verificó a mano en Chromium; los 97 tests cubren el pipeline de Python.

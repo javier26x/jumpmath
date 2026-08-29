@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .catalogo import EJE_CLAVES, EJES, UnidadJump
+from .catalogo import EJE_CLAVES, EJES
 from .errores import ErrorIngesta
 from .normalizacion import clave, redondear_pct
 from .parsers import (
@@ -66,6 +66,24 @@ class Salida:
     avisos: list[str] = field(default_factory=list)
 
 
+#: Campos internos del parseo que no forman parte del contrato de `D` (§3).
+_INTERNOS = ("puntaje_exacto",)
+
+
+def _publicable(pregunta: dict[str, Any]) -> dict[str, Any]:
+    """Deja una pregunta en la forma exacta que documenta el contrato.
+
+    Se descartan el puntaje con crédito parcial —que sólo sirve para promediar
+    el eje— y, dentro de `dist`, la marca de la alternativa correcta: el
+    parser la deduce del destacado del PDF para calcular el logro, pero `dist`
+    está documentada como la distribución de respuestas y el informe no la
+    dibuja, así que no se le añaden claves.
+    """
+    limpia = {k: v for k, v in pregunta.items() if k not in _INTERNOS}
+    limpia["dist"] = {k: v for k, v in pregunta["dist"].items() if k != "clave"}
+    return limpia
+
+
 def _preguntas_por_eje(questions: list[dict[str, Any]]) -> list[int]:
     """`D.ejeQC`: cuántas preguntas aporta cada eje (ponderación del global)."""
     return [sum(1 for q in questions if q["eje"] == eje) for eje in EJES]
@@ -107,7 +125,10 @@ def _armar_students(
     for alumno in crudos:
         pcts = [float(alumno[k]) for k in EJE_CLAVES]
         crudo = alumno.get("puntaje_crudo")
-        if crudo is None:
+        # Ponderar los % por eje da el global exacto mientras lleguen sin
+        # redondear. Sólo si el archivo ya trae enteros —y no hay puntaje
+        # crudo— el resultado puede desviarse, y entonces se avisa.
+        if crudo is None and all(float(p).is_integer() for p in pcts):
             aproximados += 1
         g = global_estudiante(pcts, eje_qc, crudo)
 
@@ -129,9 +150,9 @@ def _armar_students(
 
     if aproximados:
         avisos.append(
-            f"{aproximados} de {len(crudos)} estudiantes no traen puntaje crudo: su "
-            "global se pondera desde los % por eje. Con los % redondeados el "
-            "resultado puede desviarse un punto; incluya la columna de aciertos "
+            f"{aproximados} de {len(crudos)} estudiantes traen sus % por eje ya "
+            "redondeados y sin puntaje crudo: su global se pondera desde esos "
+            "enteros y puede desviarse un punto. Incluya la columna de aciertos "
             "para un cálculo exacto."
         )
     return students
@@ -140,44 +161,51 @@ def _armar_students(
 def _armar_recs(
     questions: list[dict[str, Any]],
     coverage: list[dict[str, Any]],
-    mapa_unidades: dict[str, list[UnidadJump]],
-    textos_base: dict[str, str],
-    textos_plus: dict[str, str],
+    rec,
     avisos: list[str],
 ) -> list[dict[str, Any]]:
-    """Recomendaciones para todo indicador descendido (<80 %), del peor al mejor."""
+    """Recomendaciones para todo indicador descendido (<80 %), del peor al mejor.
+
+    El cruce con la planilla se hace por **N° de pregunta**, que ambas fuentes
+    comparten. Emparejar por el texto del indicador sólo se usa como respaldo:
+    basta una coma o una tilde de diferencia para perder la coincidencia.
+    """
     por_clave = {f"{c['tomo']}/{c['u']}": c for c in coverage}
     recs: list[dict[str, Any]] = []
 
     for q in questions:
         if q["pct"] >= UMBRAL_DESCENDIDO:
             continue
-        llave = clave(q["ind"])
-        unidades = mapa_unidades.get(llave, [])
+
+        numero, llave = q["q"], clave(q["ind"])
+        unidades = rec.unidades.get(numero) or rec.unidades_por_indicador.get(llave, [])
+        base = rec.base.get(numero) or rec.base_por_indicador.get(llave, "")
+        plus = rec.plus.get(numero) or rec.plus_por_indicador.get(llave, "")
+
         if not unidades:
             avisos.append(
-                f"P{q['q']} «{q['ind'][:55]}…»: sin unidad JUMP asociada en la "
+                f"P{numero} «{q['ind'][:55]}…»: sin unidad JUMP asociada en la "
                 "planilla de recomendaciones; queda como 'esperado' y sin unidades."
+            )
+        if not base:
+            avisos.append(
+                f"P{numero} «{q['ind'][:55]}…»: sin texto de recomendación en la planilla."
             )
 
         detalle = [por_clave[u.clave] for u in unidades if u.clave in por_clave]
         recs.append(
             {
-                "q": q["q"],
+                "q": numero,
                 "oa": str(q["oa"]),
                 "ind": q["ind"],
                 "pct": q["pct"],
                 "sem": q["sem"],
                 "units": etiqueta_unidades(detalle),
                 "estado": estado_recomendacion([c["status"] == "res" for c in detalle]),
-                "base": textos_base.get(llave, ""),
-                "plus": textos_plus.get(llave, ""),
+                "base": base,
+                "plus": plus,
             }
         )
-        if llave not in textos_base:
-            avisos.append(
-                f"P{q['q']} «{q['ind'][:55]}…»: sin texto de recomendación en la planilla."
-            )
 
     recs.sort(key=orden_recomendaciones)
     return recs
@@ -217,14 +245,25 @@ def ensamblar(entrada: Entrada, *, estricto: bool = True) -> Salida:
             + ", ".join(f"P{n}" for n in sin_eje)
         )
 
-    niveles = dict(dia.niveles) or {"I": 0, "II": 0, "III": 0}
+    # El nivel de cada estudiante es el que asigna la Agencia y llega en la
+    # nómina oficial; contarlos no es recalcularlos con cortes de porcentaje,
+    # que es lo que la guía prohíbe. Se usa el recuento del PDF cuando existe,
+    # pero el Gráfico 1 no trae capa de texto y casi nunca es legible.
     conteo = {"I": 0, "II": 0, "III": 0}
     for alumno in students:
         conteo[("I", "II", "III")[alumno["lv"] - 1]] += 1
-    if niveles != conteo:
+
+    niveles = dict(dia.niveles) if dia.niveles else conteo
+    if dia.niveles and niveles != conteo:
         avisos.append(
             f"los niveles del PDF oficial {niveles} no coinciden con el conteo de la "
             f"nómina {conteo}. Se usan los del PDF oficial (guía §4)."
+        )
+
+    if (n_pdf := dia.meta.get("n")) is not None and n_pdf != len(students):
+        avisos.append(
+            f"el PDF declara {n_pdf} estudiantes y la nómina trae {len(students)}. "
+            "Se usa la nómina, que es la que alimenta el informe por estudiante."
         )
 
     meta = {
@@ -245,11 +284,9 @@ def ensamblar(entrada: Entrada, *, estricto: bool = True) -> Salida:
         "ejeProm": eje_prom,
         "promGlobal": promedio_global(eje_prom, eje_qc),
         "students": students,
-        "questions": [
-            {k: v for k, v in q.items() if k != "puntaje_exacto"} for q in questions
-        ],
+        "questions": [_publicable(q) for q in questions],
         "coverage": seg.coverage,
-        "recs": _armar_recs(questions, seg.coverage, rec.unidades, rec.base, rec.plus, avisos),
+        "recs": _armar_recs(questions, seg.coverage, rec, avisos),
         "ejeQC": eje_qc,
     }
 

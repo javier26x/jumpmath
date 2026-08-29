@@ -89,6 +89,33 @@ def unidad(clave: str) -> UnidadJump:
     raise KeyError(f"unidad JUMP desconocida: {clave!r}")
 
 
+def unidad_por_nombre(numero: int, etiqueta: str) -> UnidadJump | None:
+    """Resuelve una unidad por su número y su nombre, tolerando erratas.
+
+    El número solo no basta: «Unidad 1» es *Series* en el Tomo 4.1 y *Figuras*
+    en el 4.2. Es el nombre el que decide el tomo. Se compara por similitud
+    porque las planillas de los colegios traen erratas — «Undades métricas y
+    tiempo» es un caso real— que una comparación exacta descartaría.
+    """
+    from difflib import SequenceMatcher
+
+    from .normalizacion import clave as _clave
+
+    candidatas = [u for u in UNIDADES_JUMP if u.u == f"U{numero}"]
+    if not candidatas:
+        return None
+    if len(candidatas) == 1 and not _clave(etiqueta):
+        return candidatas[0]
+
+    objetivo = _clave(etiqueta)
+    mejor, puntaje = None, 0.0
+    for unidad in candidatas:
+        similitud = SequenceMatcher(None, objetivo, _clave(unidad.label)).ratio()
+        if similitud > puntaje:
+            mejor, puntaje = unidad, similitud
+    return mejor if puntaje >= 0.6 else None
+
+
 def indice_eje(nombre: str) -> int:
     """Índice canónico del eje, tolerando tildes/mayúsculas/variantes."""
     from .normalizacion import sin_tildes

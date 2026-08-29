@@ -30,9 +30,21 @@ def test_cada_clave_del_contrato(D_reconstruido, D_publicado, clave):
     assert D_reconstruido[clave] == D_publicado[clave]
 
 
-def test_ingesta_sin_avisos(entrada):
+def test_los_avisos_son_solo_informativos(entrada):
+    """La ingesta limpia avisa de dos cosas, y ninguna es un problema de datos.
+
+    Que los Gráficos 1 y 2 no tengan capa de texto, y qué unidades quedaron
+    sin control registrado. Cualquier otro aviso señala algo que revisar.
+    """
     salida = ensamblar(entrada)
-    assert salida.avisos == []
+    sin_registro = [c for c in salida.D["coverage"] if c["status"] == "none"]
+
+    graficos = [a for a in salida.avisos if "gráficos sin capa de texto" in a]
+    pendientes = [a for a in salida.avisos if "no tiene resultados registrados" in a]
+
+    assert len(graficos) == 1
+    assert len(pendientes) == len(sin_registro)
+    assert len(salida.avisos) == len(graficos) + len(pendientes), salida.avisos
 
 
 def test_D_reconstruido_pasa_la_validacion(D_reconstruido):

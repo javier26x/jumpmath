@@ -351,8 +351,14 @@ function renderPan(){
   const nv=D.niveles, n=D.meta.n;
   const ejeMin=D.ejes[D.ejeProm.indexOf(Math.min(...D.ejeProm))], ejeMax=D.ejes[D.ejeProm.indexOf(Math.max(...D.ejeProm))];
   const reds=D.questions.filter(q=>q.sem==='R').length, yellows=D.questions.filter(q=>q.sem==='A').length;
+  // Qué alcanzó a trabajar el curso se deduce de la cobertura registrada: si se
+  // deja fijo, el informe afirma lo del curso para el que se escribió.
+  const trabajadas=D.coverage.filter(c=>c.status==='res');
+  const listaTrab=trabajadas.length
+    ? `tiene control o prueba registrada en <b>${trabajadas.length} de ${D.coverage.length} unidades JUMP</b> (${trabajadas.map(c=>c.tomo+' '+c.u).join(' · ')})`
+    : `no tiene controles ni pruebas JUMP registradas`;
   document.getElementById('panContext').innerHTML=
-    `<b>Cómo leer esta evaluación.</b> El DIA de Monitoreo Intermedio evalúa los OA de <b>término</b> de 4° básico. Por eso varios OA aún no han sido abordados y otros están en desarrollo. A la fecha de aplicación (${D.meta.fecha}), el curso ha trabajado principalmente el eje de <b>Números y Operaciones</b> y <b>simetría</b>: los ejes y OA aún no enseñados deben leerse como <b>línea base</b>, no como déficit.`;
+    `<b>Cómo leer esta evaluación.</b> El DIA de Monitoreo Intermedio evalúa los OA de <b>término</b> de 4° básico. Por eso varios OA aún no han sido abordados y otros están en desarrollo. A la fecha de aplicación (${D.meta.fecha}), el curso ${listaTrab}: los ejes y OA aún no enseñados deben leerse como <b>línea base</b>, no como déficit.`;
   document.getElementById('kpis').innerHTML=
     `<div class="kpi g"><div class="n">${Math.round(100*nv.III/n)}%</div><div class="l">Nivel III · Satisfactorio (${nv.III})</div></div>`+
     `<div class="kpi y"><div class="n">${Math.round(100*nv.II/n)}%</div><div class="l">Nivel II · Intermedio (${nv.II})</div></div>`+
@@ -360,9 +366,20 @@ function renderPan(){
     `<div class="kpi acc"><div class="n">${D.promGlobal}%</div><div class="l">Logro global del curso</div></div>`+
     `<div class="kpi r"><div class="n">${reds+yellows}</div><div class="l">Indicadores descendidos &lt;80% (${reds} rojos · ${yellows} amarillos)</div></div>`;
   document.getElementById('donutBox').innerHTML=donutSVG([nv.III,nv.II,nv.I],LVLC);
+  // Todo el párrafo se calcula: decir "sin estudiantes en Nivel I" o "la mitad
+  // del curso" de forma fija hace que el informe mienta en cuanto cambia el curso.
+  const pctNv=k=>Math.round(100*nv[k]/n);
+  const colaI=nv.I
+    ? ` y <b>${pctNv('I')}% en Nivel I</b> (insatisfactorio)`
+    : `, sin estudiantes en Nivel I`;
+  const mayor=['I','II','III'].reduce((a,b)=>nv[b]>nv[a]?b:a);
+  const NOMBRE_NV={I:'Insatisfactorio',II:'Intermedio',III:'Satisfactorio'};
+  const rango=Math.max(...D.ejeProm)-Math.min(...D.ejeProm);
+  const dispersion=rango<10?'baja: los ejes se comportan de forma pareja'
+    :rango<25?'moderada':'alta: conviene mirar cada eje por separado';
   document.getElementById('panTxt').innerHTML=
-    `<p>Según la clasificación oficial del DIA, el curso se reparte en <b>${Math.round(100*nv.III/n)}% en Nivel III</b> (satisfactorio) y <b>${Math.round(100*nv.II/n)}% en Nivel II</b> (intermedio), sin estudiantes en Nivel I. La mitad del curso alcanza los OA de término de año de forma <b>parcial</b>, lo esperable dado que varios OA aún están en desarrollo o no han sido abordados.</p>`+
-    `<p>El eje más logrado es <b>${ejeMax}</b> y el más descendido es <b>${ejeMin}</b>. La diferencia entre ejes es moderada (${Math.min(...D.ejeProm).toFixed(0)}–${Math.max(...D.ejeProm).toFixed(0)}%): resultados relativamente homogéneos.</p>`;
+    `<p>Según la clasificación oficial del DIA, el curso se reparte en <b>${pctNv('III')}% en Nivel III</b> (satisfactorio), <b>${pctNv('II')}% en Nivel II</b> (intermedio)${colaI}. El grupo mayoritario está en <b>Nivel ${mayor} · ${NOMBRE_NV[mayor]}</b> (${nv[mayor]} de ${n} estudiantes), lo esperable en un monitoreo intermedio, donde varios OA aún están en desarrollo o no han sido abordados.</p>`+
+    `<p>El eje más logrado es <b>${ejeMax}</b> (${Math.max(...D.ejeProm).toFixed(0)}%) y el más descendido es <b>${ejeMin}</b> (${Math.min(...D.ejeProm).toFixed(0)}%). La diferencia entre ambos es de <b>${rango.toFixed(0)} puntos</b>: dispersión ${dispersion}.</p>`;
   document.getElementById('lvldefs').innerHTML=
     `<div class="lvldef n3"><div class="lt">Satisfactorio · Nivel III</div><div class="ld">Logran de forma completa los aprendizajes evaluados del nivel. Muestran una base sólida para seguir aprendiendo.</div></div>`+
     `<div class="lvldef n2"><div class="lt">Intermedio · Nivel II</div><div class="ld">Alcanzan los objetivos de manera parcial. Necesitan apoyo o refuerzo en ciertos temas o ejes.</div></div>`+
@@ -405,8 +422,17 @@ function renderInd(){
     `<thead><tr><th class="c">Preg.</th><th>OA</th><th>Indicador de evaluación · habilidad</th><th class="c">% logro</th><th class="c">Tipo</th></tr></thead><tbody>${rows}</tbody>`;
 }
 function renderCru(){
+  // La lista de unidades registradas se arma desde D: enumerarlas a mano
+  // describe el curso para el que se escribió el prototipo, no el que se lee.
+  const conRes=D.coverage.filter(c=>c.status==='res');
+  const porTomo=t=>conRes.filter(c=>c.tomo===t).map(c=>c.label).join(', ');
+  const detalle=conRes.length
+    ? `En este curso se registran evaluaciones en <b>${conRes.length} de ${D.coverage.length}</b> unidades`+
+      (porTomo('4.1')?` — Tomo 4.1: ${porTomo('4.1')}`:'')+
+      (porTomo('4.2')?`; Tomo 4.2: ${porTomo('4.2')}`:'')+'.'
+    : `En este curso no hay evaluaciones JUMP registradas a la fecha.`;
   document.getElementById('planNote').innerHTML=
-    `<b>Referencia según Plan Anual.</b> Al Monitoreo Intermedio (agosto), el curso debería tener trabajado el <b>Tomo 4.1</b> e iniciando el <b>Tomo 4.2</b>. En este curso, a la fecha se registran evaluaciones de las unidades de Números y Operaciones (Series, Valor posicional, Multiplicar, Dividir) y de Figuras (simetría). Ajustar según el Plan Anual efectivo del establecimiento.`;
+    `<b>Referencia según Plan Anual.</b> Al Monitoreo Intermedio (agosto), el curso debería tener trabajado el <b>Tomo 4.1</b> e iniciando el <b>Tomo 4.2</b>. ${detalle}${D.notaCobertura?' '+D.notaCobertura:''} Ajustar según el Plan Anual efectivo del establecimiento.`;
   let g='';let curT=null;
   D.coverage.forEach(c=>{
     if(c.tomo!==curT){curT=c.tomo;g+=`<div class="tomohdr">Tomo ${c.tomo}</div>`;}

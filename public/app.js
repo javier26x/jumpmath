@@ -247,9 +247,16 @@ function conectarBotonGenerar(functions, fns, usuario) {
     } catch (error) {
       boton.disabled = false;
       boton.textContent = etiqueta;
-      // El mensaje del backend dice qué columna falta y en qué archivo.
-      pista.textContent = error?.message || "No se pudo generar el informe.";
+      pista.textContent = "No se pudo generar el informe.";
       pista.style.color = "var(--r)";
+      // El mensaje del backend dice qué columna falta y en qué archivo: es lo
+      // único que permite corregir la planilla, así que va en un bloque
+      // legible y no comprimido en la línea de ayuda del botón.
+      mostrarMensaje(
+        "No se pudo generar el informe",
+        [error?.message || "Error desconocido."],
+        "var(--r)",
+      );
     }
   };
 }
@@ -257,15 +264,31 @@ function conectarBotonGenerar(functions, fns, usuario) {
 /** Los avisos no son errores: son los supuestos que tomó la ingesta. */
 function mostrarAvisos(avisos) {
   if (!avisos.length) return;
+  mostrarMensaje(
+    `${avisos.length} aviso(s) de la ingesta`,
+    avisos,
+    "",
+    "El informe se generó igual; revise estos puntos antes de compartirlo.",
+  );
+}
+
+/** Bloque de mensajes bajo el Paso 1, reutilizado por avisos y errores. */
+function mostrarMensaje(titulo, lineas, color, bajada = "") {
   const panel = document.getElementById("uploadPanel");
-  const caja = document.createElement("div");
-  caja.className = "note";
+  if (!panel) return;
+
+  let caja = document.getElementById("ingestaMsg");
+  if (!caja) {
+    caja = document.createElement("div");
+    caja.id = "ingestaMsg";
+    caja.className = "note";
+    panel.appendChild(caja);
+  }
+  caja.style.borderColor = color || "";
   caja.innerHTML =
-    `<b>${avisos.length} aviso(s) de la ingesta.</b> El informe se generó igual; ` +
-    "revise estos puntos antes de compartirlo.<ul>" +
-    avisos.map((a) => `<li>${escapar(a)}</li>`).join("") +
-    "</ul>";
-  panel.appendChild(caja);
+    `<b style="color:${color || "inherit"}">${escapar(titulo)}.</b> ${escapar(bajada)}` +
+    "<ul>" + lineas.map((linea) => `<li>${escapar(linea)}</li>`).join("") + "</ul>";
+  caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 /**
