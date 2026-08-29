@@ -42,8 +42,11 @@ sello="$destino/.requirements.sha256"
 actual="$(sha256sum "$requisitos" | cut -d' ' -f1)"
 if [[ "$(cat "$sello" 2>/dev/null || true)" != "$actual" ]]; then
   echo "Instalando las dependencias de las funciones…"
-  "$destino/bin/pip" install --quiet --upgrade pip
-  "$destino/bin/pip" install --quiet -r "$requisitos"
+  # Sin caché: los wheels descargados ocupan casi tanto como el propio entorno
+  # (112 MB frente a 252 MB) y no se reutilizan, lo que en un disco ajustado
+  # —Cloud Shell da 5 GB— es la diferencia entre desplegar y quedarse sin sitio.
+  "$destino/bin/pip" install --quiet --no-cache-dir --upgrade pip
+  "$destino/bin/pip" install --quiet --no-cache-dir -r "$requisitos"
   echo "$actual" > "$sello"
 fi
 
