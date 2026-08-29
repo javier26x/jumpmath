@@ -1,12 +1,5 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "versiones",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "generado", "order": "DESCENDING" }
-      ]
-    }
-  ],
+  "comment": "Sin índices declarados, y es lo correcto: el backend no ejecuta consultas sobre Firestore, sólo lecturas y escrituras de documento por ruta. Firestore además crea solo los índices de campo único, así que declarar uno lo rechaza con «this index is not necessary». Si algún día se consulta el historial de versiones ordenado y filtrado a la vez, el índice compuesto va aquí.",
+  "indexes": [],
   "fieldOverrides": []
 }
