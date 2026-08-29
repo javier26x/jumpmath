@@ -184,9 +184,28 @@ firebase deploy --only functions
 firebase deploy --only hosting
 ```
 
-`firebase.json` copia la plantilla dentro de `functions/` antes de desplegar
-(`scripts/sync_plantilla.sh`), porque el despliegue sólo empaqueta ese
-directorio. `public/index.html` es la única copia versionada.
+Los dos hooks de `predeploy` de `firebase.json` dejan todo listo solo:
+
+- `scripts/sync_plantilla.sh` copia la plantilla dentro de `functions/`, porque
+  el despliegue sólo empaqueta ese directorio. `public/index.html` sigue siendo
+  la única copia versionada.
+- `scripts/preparar_functions.sh` crea `functions/venv` e instala las
+  dependencias. El CLI importa el código para descubrir qué funciones hay y sin
+  ese entorno aborta con *«Missing virtual environment at venv directory»*. Es
+  sólo local —el runtime de producción lo construye Google— y se reinstala
+  únicamente cuando cambia `requirements.txt`. Si la máquina no tiene el
+  intérprete exacto del runtime declarado, avisa y usa el `python3` disponible.
+
+### Lo que hay que habilitar una vez en la consola
+
+Ninguna de las tres la puede hacer el CLI, y el despliegue falla sin las dos
+primeras:
+
+| Qué | Dónde | Si falta |
+|---|---|---|
+| Plan **Blaze** | Uso y facturación | `functions` no puede habilitar `cloudbuild` |
+| **Cloud Storage** | Build → Storage → *Comenzar* | `storage` no encuentra el bucket |
+| Acceso con **Google** | Authentication → Sign-in method | El deploy pasa, pero el docente no puede entrar |
 
 El frontend ya apunta al proyecto **`jumpmathv2`** en
 `public/firebase-config.js`. Esos valores son públicos por diseño —viajan al

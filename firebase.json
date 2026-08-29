@@ -13,7 +13,8 @@
         "firebase-debug.log"
       ],
       "predeploy": [
-        "bash \"$PROJECT_DIR/scripts/sync_plantilla.sh\""
+        "bash \"$PROJECT_DIR/scripts/sync_plantilla.sh\"",
+        "bash \"$PROJECT_DIR/scripts/preparar_functions.sh\""
       ]
     }
   ],
