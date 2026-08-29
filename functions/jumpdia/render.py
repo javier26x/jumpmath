@@ -28,6 +28,31 @@ def serializar_D(D: dict[str, Any]) -> str:
     return re.sub(r"[<>&  ]", lambda m: _ESCAPES[m.group()], crudo)
 
 
+#: Etiqueta que engancha la aplicación con la plantilla. En un informe ya
+#: generado no pinta nada: el Paso 1 se cumplió y no hay nada que subir.
+_MARCA_APP = '<script type="module" src="/app.js"></script>'
+
+_ESTILO_INFORME = (
+    "<style>/* Informe generado: el Paso 1 ya se cumplió. */\n"
+    "#uploadPanel{display:none!important}</style>\n"
+)
+
+
+def preparar_informe(plantilla: str, D: dict[str, Any]) -> str:
+    """HTML del informe de un curso, listo para servir por sí solo.
+
+    Es el mismo archivo que la aplicación, con el `D` del curso y sin la
+    cáscara: se quita el script que conecta el Paso 1 y se oculta el panel de
+    carga, que en un informe ya generado sólo invita a subir los archivos otra
+    vez. Lo que queda es lo que describe la guía §3: un HTML autocontenido.
+    """
+    html = inyectar_D(plantilla, D)
+    html = html.replace(_MARCA_APP, "")
+    if "</head>" in html:
+        return html.replace("</head>", _ESTILO_INFORME + "</head>", 1)
+    return _ESTILO_INFORME + html
+
+
 def inyectar_D(plantilla: str, D: dict[str, Any]) -> str:
     """Devuelve el HTML del informe con `D` reemplazado por el del curso."""
     inicio = plantilla.find(_MARCA)

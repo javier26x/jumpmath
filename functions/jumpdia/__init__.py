@@ -23,7 +23,7 @@ from __future__ import annotations
 from .catalogo import EJES, TIPOS_ITEM, UNIDADES_JUMP
 from .ensamblaje import Archivo, Entrada, Salida, ensamblar
 from .errores import ErrorIngesta, ErrorParseo, ErrorValidacion
-from .render import inyectar_D
+from .render import inyectar_D, preparar_informe
 from .validacion import validar
 
 __version__ = "1.0.0"
@@ -40,5 +40,6 @@ __all__ = [
     "UNIDADES_JUMP",
     "ensamblar",
     "inyectar_D",
+    "preparar_informe",
     "validar",
 ]

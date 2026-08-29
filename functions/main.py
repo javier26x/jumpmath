@@ -29,7 +29,7 @@ from typing import Any
 from firebase_admin import auth as fb_auth
 from firebase_admin import firestore, initialize_app, storage
 from firebase_functions import https_fn, options, storage_fn
-from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, inyectar_D
+from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, preparar_informe
 
 #: Debe coincidir con la región del bucket y con `firebase.json` y
 #: `firebase-config.js`. Hay un test que lo comprueba.
@@ -335,7 +335,7 @@ def informe(req: https_fn.Request) -> https_fn.Response:
     if not doc.exists or "D" not in (doc.to_dict() or {}):
         return https_fn.Response("Informe no generado para ese curso.", status=404)
 
-    html = inyectar_D(_PLANTILLA.read_text(encoding="utf-8"), doc.to_dict()["D"])
+    html = preparar_informe(_PLANTILLA.read_text(encoding="utf-8"), doc.to_dict()["D"])
     return https_fn.Response(
         html,
         status=200,

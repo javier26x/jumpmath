@@ -318,10 +318,13 @@ async function abrirInforme(usuario, cursoId) {
   if (!respuesta.ok) {
     throw new Error(await respuesta.text());
   }
-  const html = await respuesta.text();
-  document.open();
-  document.write(html);
-  document.close();
+  // Se abre como documento nuevo y no con `document.write` sobre este: el
+  // informe vuelve a declarar `const D`, y reescribir el documento actual no
+  // reinicia el ámbito global de JavaScript. La segunda declaración lanza
+  // «Identifier 'D' has already been declared», el script entero muere y el
+  // informe sale en blanco. Un blob es un documento aparte, con su ámbito.
+  const blob = new Blob([await respuesta.text()], { type: "text/html" });
+  location.href = URL.createObjectURL(blob);
 }
 
 /** Los avisos no son errores: son los supuestos que tomó la ingesta. */

@@ -10,7 +10,15 @@ import dataclasses
 import json
 
 import pytest
-from jumpdia import Archivo, ErrorParseo, ErrorValidacion, ensamblar, inyectar_D, validar
+from jumpdia import (
+    Archivo,
+    ErrorParseo,
+    ErrorValidacion,
+    ensamblar,
+    inyectar_D,
+    preparar_informe,
+    validar,
+)
 from jumpdia.catalogo import UNIDADES_JUMP
 
 
@@ -118,3 +126,36 @@ def test_modo_no_estricto_devuelve_los_problemas_como_avisos(entrada, monkeypatc
     assert "problema de prueba" in salida.avisos
     with pytest.raises(ErrorValidacion):
         ensamblar(entrada, estricto=True)
+
+
+def test_el_informe_servido_es_autonomo(D_reconstruido):
+    """Lo que entrega el backend es el informe, no la aplicación.
+
+    El HTML es el mismo archivo para las dos cosas, así que hay que quitarle la
+    cáscara. El script de la aplicación importa especialmente: vuelve a
+    declarar `const D` en un documento que ya lo tenía y el navegador aborta el
+    script entero con «Identifier 'D' has already been declared», dejando el
+    informe en blanco. Y el panel de carga, en un informe ya generado, sólo
+    invita a subir los archivos otra vez.
+    """
+    from tests.conftest import RAIZ
+
+    plantilla = (RAIZ / "public" / "index.html").read_text(encoding="utf-8")
+    assert 'src="/app.js"' in plantilla, "la plantilla debe traer la cáscara"
+
+    html = preparar_informe(plantilla, D_reconstruido)
+    assert 'src="/app.js"' not in html
+    assert "#uploadPanel{display:none!important}" in html
+    # Y el informe en sí queda intacto.
+    assert "const D=" in html and "function renderPan" in html
+
+
+def test_el_informe_servido_lleva_los_datos_del_curso(D_reconstruido):
+    from tests.conftest import RAIZ
+
+    html = preparar_informe(
+        (RAIZ / "public" / "index.html").read_text(encoding="utf-8"), D_reconstruido
+    )
+    inicio = html.index("const D=") + len("const D=")
+    releido, _ = json.JSONDecoder().raw_decode(html, inicio)
+    assert releido == D_reconstruido
