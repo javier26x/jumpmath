@@ -24,6 +24,24 @@ const RANURAS = {
 /** Ruta con la que el backend sirve un informe ya generado. */
 const RUTA_INFORME = "/api/informe";
 
+/**
+ * Quién puede usar el sistema. Aquí sólo sirve para dar un mensaje claro: la
+ * comprobación que protege los datos está en las Cloud Functions y en las
+ * reglas de Firestore y Storage, que es donde el usuario no puede saltársela.
+ * Un test verifica que las cuatro copias de la lista no se separen.
+ */
+const CORREOS_AUTORIZADOS = ["javier.neo@gmail.com"];
+const DOMINIOS_AUTORIZADOS = ["jumpmath.cl"];
+
+function correoAutorizado(correo) {
+  const limpio = (correo || "").trim().toLowerCase();
+  if (limpio.split("@").length !== 2) return false;
+  return (
+    CORREOS_AUTORIZADOS.includes(limpio) ||
+    DOMINIOS_AUTORIZADOS.includes(limpio.split("@")[1])
+  );
+}
+
 const proto = window.InformeDIA;
 if (proto) arrancar().catch(reportarFallo);
 
@@ -76,6 +94,21 @@ async function arrancar() {
   auth.onAuthStateChanged(sesion, (usuario) => {
     if (!usuario) {
       acceso.pedirAcceso();
+      return;
+    }
+    if (!correoAutorizado(usuario.email)) {
+      // El backend la rechazaría igual; cerrarla aquí evita que la interfaz
+      // se muestre operativa a alguien que no va a poder generar nada.
+      auth.signOut(sesion);
+      acceso.pedirAcceso();
+      mostrarMensaje(
+        "Esta cuenta no tiene acceso",
+        [
+          `${usuario.email || "La cuenta usada"} no está autorizada.`,
+          "Entre con una cuenta @jumpmath.cl.",
+        ],
+        "var(--r)",
+      );
       return;
     }
     acceso.confirmarAcceso(usuario);
@@ -182,12 +215,23 @@ function crearBotonAcceso(alHacerClic) {
 }
 
 /**
- * Deriva el identificador del curso desde los datos que ya muestra el informe.
- * El backend lo valida igual: aquí sólo se evita una ida y vuelta inútil.
+ * Carpeta de esta tanda de archivos, generada al azar.
+ *
+ * No puede nombrarse por el curso: cuál es el curso sólo se sabe al leer el
+ * informe oficial, que es justo lo que va a hacer el backend. Derivarlo de lo
+ * que muestra la página tomaría los datos del curso de ejemplo, y entonces
+ * todos los cursos de todos los colegios compartirían carpeta y se pisarían.
  */
-function cursoId() {
-  const { rbd, curso } = proto.D.meta;
-  return `${rbd}-${curso}`.toLowerCase().replace(/[°\s]/g, "");
+let loteActual = null;
+
+function loteId() {
+  if (!loteActual) {
+    loteActual = (crypto.randomUUID?.() || `${Date.now()}${Math.random()}`)
+      .replace(/[^a-z0-9]/gi, "")
+      .toLowerCase()
+      .slice(0, 32);
+  }
+  return loteActual;
 }
 
 /** Cada casillero sube su archivo en cuanto se selecciona. */
@@ -208,7 +252,7 @@ function conectarCasilleros(storage, bucket, usuario) {
       delete proto.loaded[id];
       proto.updateGen();
 
-      const ruta = `cursos/${usuario.uid}/${cursoId()}/${RANURAS[id]}/${archivo.name}`;
+      const ruta = `cursos/${usuario.uid}/${loteId()}/${RANURAS[id]}/${archivo.name}`;
       try {
         await storage.uploadBytes(storage.ref(bucket, ruta), archivo, {
           contentType: archivo.type || "application/octet-stream",
@@ -238,12 +282,9 @@ function conectarBotonGenerar(functions, fns, usuario) {
 
     try {
       const generar = functions.httpsCallable(fns, "generar_informe");
-      const { data } = await generar({ cursoId: cursoId() });
+      const { data } = await generar({ loteId: loteId() });
       mostrarAvisos(data.avisos || []);
-      // El informe lo arma el backend: se navega al HTML con `D` inyectado.
-      location.href = `/api/informe?uid=${encodeURIComponent(usuario.uid)}&curso=${
-        encodeURIComponent(data.cursoId)
-      }`;
+      await abrirInforme(usuario, data.cursoId);
     } catch (error) {
       boton.disabled = false;
       boton.textContent = etiqueta;
@@ -259,6 +300,28 @@ function conectarBotonGenerar(functions, fns, usuario) {
       );
     }
   };
+}
+
+/**
+ * Pide el informe al backend y lo muestra.
+ *
+ * Se descarga con `fetch` y el token en la cabecera, en vez de navegar a la
+ * URL: el informe lleva nombres y resultados de estudiantes, así que el
+ * servidor exige una sesión válida y deduce de ella de quién es el curso. Una
+ * URL con el identificador dentro se podría abrir —o compartir— sin sesión.
+ */
+async function abrirInforme(usuario, cursoId) {
+  const token = await usuario.getIdToken();
+  const respuesta = await fetch(`${RUTA_INFORME}?curso=${encodeURIComponent(cursoId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!respuesta.ok) {
+    throw new Error(await respuesta.text());
+  }
+  const html = await respuesta.text();
+  document.open();
+  document.write(html);
+  document.close();
 }
 
 /** Los avisos no son errores: son los supuestos que tomó la ingesta. */

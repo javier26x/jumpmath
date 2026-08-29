@@ -251,11 +251,34 @@ firebase emulators:start        # Hosting :5000 · Functions :5001 · UI :4000
 | **App Check** | Opcional; se activa con `appCheckSiteKey`. |
 | **Emulator Suite** | Desarrollo local de los cinco servicios. |
 
+### Quién puede entrar
+
+Sólo `javier.neo@gmail.com` y las cuentas `@jumpmath.cl`, con el correo
+verificado. La lista está en cuatro sitios porque cada capa evalúa la suya:
+
+| Archivo | Para qué |
+|---|---|
+| `functions/main.py` | Rechaza las llamadas a las funciones. Editable con `JUMPDIA_CORREOS` y `JUMPDIA_DOMINIOS`. |
+| `firestore.rules` | Cierra la base de datos. |
+| `storage.rules` | Cierra las subidas y descargas de archivos. |
+| `public/app.js` | Sólo para dar un mensaje claro y cerrar la sesión. |
+
+Las reglas son la defensa real: los SDK de Firestore y Storage se pueden llamar
+desde fuera de la interfaz, así que una comprobación que viviera sólo en el
+cliente o en las funciones no protegería nada. La copia del cliente es
+cortesía. `test_la_lista_de_acceso_es_la_misma_en_los_cuatro_archivos`
+comprueba que no se separen —ni de más ni de menos— porque una regla más laxa
+que las funciones abre la base de datos sin que nadie lo note.
+
 ### Sobre los datos personales
 
 Los informes traen nombres y resultados de estudiantes. Las decisiones que hay
 detrás de las reglas de seguridad:
 
+- El endpoint que sirve el informe exige el token de sesión en la cabecera y
+  saca de él de quién es el curso. El `uid` **no** viaja en la URL: si viajara,
+  bastaría probar identificadores para leer el informe de otro curso, y una URL
+  así se puede compartir o quedar en un historial.
 - Storage y Firestore están particionados por `uid`: un docente sólo ve lo suyo.
 - El `D` lo escriben **sólo** las Cloud Functions, que entran con credenciales
   de servicio y no pasan por las reglas. Desde el cliente `D` es de sólo

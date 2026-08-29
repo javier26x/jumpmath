@@ -129,3 +129,102 @@ def test_el_proyecto_del_cliente_coincide_con_firebaserc():
 
     alias = json.loads((RAIZ / ".firebaserc").read_text(encoding="utf-8"))
     assert alias["projects"]["default"] == _config_del_cliente()["projectId"]
+
+
+# --- Lista de acceso -----------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "correo, permitido",
+    [
+        ("javier.neo@gmail.com", True),
+        ("JAVIER.NEO@Gmail.com", True),
+        ("ana@jumpmath.cl", True),
+        ("ana@JUMPMATH.CL", True),
+        ("  ana@jumpmath.cl  ", True),
+        ("otro@gmail.com", False),
+        # Sufijo pegado: el dominio real es evil.cl, no jumpmath.cl.
+        ("javier.neo@gmail.com.evil.cl", False),
+        ("alguien@jumpmath.cl.evil.cl", False),
+        # Subdominio: no es el dominio autorizado.
+        ("alguien@sub.jumpmath.cl", False),
+        ("sinarroba", False),
+        ("a@b@jumpmath.cl", False),
+        ("", False),
+        (None, False),
+    ],
+)
+def test_correo_autorizado(main, correo, permitido):
+    assert main.correo_autorizado(correo) is permitido
+
+
+def _autorizados_en_reglas(texto: str) -> tuple[set[str], set[str]]:
+    """Correos y dominios de un archivo `.rules`.
+
+    Se leen de las dos formas concretas en que las reglas los expresan, y no
+    con una búsqueda laxa de correos: el dominio del propio correo autorizado
+    (`gmail.com`) no es un dominio autorizado, y confundirlos haría pasar una
+    regla que abriera todo Gmail.
+    """
+    import re
+
+    correos: set[str] = set()
+    for lista in re.findall(r"email\.lower\(\) in \[([^\]]*)\]", texto):
+        correos |= set(re.findall(r"'([^']+)'", lista))
+    dominios = {
+        f"{a}.{b}"
+        for a, b in re.findall(r"matches\('\.\*@([\w-]+)\[\.\]([\w-]+)'\)", texto)
+    }
+    return correos, dominios
+
+
+def _autorizados_en_cliente(texto: str) -> tuple[set[str], set[str]]:
+    """Correos y dominios de las dos constantes de `public/app.js`."""
+    import re
+
+    def lista(nombre: str) -> set[str]:
+        m = re.search(rf"const {nombre} = \[([^\]]*)\]", texto)
+        return set(re.findall(r'"([^"]+)"', m.group(1))) if m else set()
+
+    return lista("CORREOS_AUTORIZADOS"), lista("DOMINIOS_AUTORIZADOS")
+
+
+def test_la_lista_de_acceso_es_la_misma_en_los_cuatro_archivos(main):
+    """Cuatro copias de la misma lista: dos reglas, las funciones y el cliente.
+
+    Cada servicio evalúa las suyas, así que la duplicación es inevitable; lo
+    que no puede pasar es que se separen. Una regla más laxa que las funciones
+    abre la base de datos, y una más estricta deja fuera a alguien a quien la
+    interfaz sí deja entrar.
+    """
+    from tests.conftest import RAIZ
+
+    esperado = (set(main.CORREOS_AUTORIZADOS), set(main.DOMINIOS_AUTORIZADOS))
+    assert esperado == ({"javier.neo@gmail.com"}, {"jumpmath.cl"})
+
+    for archivo, extraer in (
+        ("firestore.rules", _autorizados_en_reglas),
+        ("storage.rules", _autorizados_en_reglas),
+        ("public/app.js", _autorizados_en_cliente),
+    ):
+        obtenido = extraer((RAIZ / archivo).read_text(encoding="utf-8"))
+        assert obtenido == esperado, f"{archivo} no coincide: {obtenido} != {esperado}"
+
+
+def test_las_reglas_exigen_correo_verificado():
+    """Sin `email_verified`, un proveedor que no valide el correo dejaría entrar
+    a quien declarase uno ajeno."""
+    from tests.conftest import RAIZ
+
+    for archivo in ("firestore.rules", "storage.rules"):
+        texto = (RAIZ / archivo).read_text(encoding="utf-8")
+        assert "email_verified" in texto, f"{archivo} no comprueba el correo verificado"
+
+
+def test_el_informe_no_acepta_el_uid_por_la_url(main):
+    """El informe lleva datos personales: el `uid` sale del token, no de la URL."""
+    import inspect
+
+    fuente = inspect.getsource(main)
+    assert 'args.get("uid"' not in fuente
+    assert "_uid_del_portador" in fuente

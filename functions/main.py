@@ -20,11 +20,13 @@ petición del docente es despreciable.
 from __future__ import annotations
 
 import datetime as dt
+import logging
 import os
 import pathlib
 import re
 from typing import Any
 
+from firebase_admin import auth as fb_auth
 from firebase_admin import firestore, initialize_app, storage
 from firebase_functions import https_fn, options, storage_fn
 from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, inyectar_D
@@ -53,8 +55,38 @@ RANURAS: dict[str, bool] = {
     "plan_anual": False,
 }
 
-#: `cursos/{cursoId}` — el id lo arma el cliente como `rbd-curso`.
+#: Quién puede usar el sistema. Se comprueba en cada función y también en las
+#: reglas de Firestore y Storage: las reglas son la defensa real, porque el
+#: cliente puede llamar a la API por fuera de la interfaz. `tests/` verifica
+#: que las tres copias de la lista no se separen.
+CORREOS_AUTORIZADOS = frozenset(
+    correo.strip().lower()
+    for correo in os.environ.get("JUMPDIA_CORREOS", "javier.neo@gmail.com").split(",")
+    if correo.strip()
+)
+DOMINIOS_AUTORIZADOS = frozenset(
+    dominio.strip().lower().lstrip("@")
+    for dominio in os.environ.get("JUMPDIA_DOMINIOS", "jumpmath.cl").split(",")
+    if dominio.strip()
+)
+
+
+def correo_autorizado(correo: str | None) -> bool:
+    """`True` si el correo está en la lista o pertenece a un dominio autorizado."""
+    limpio = (correo or "").strip().lower()
+    if limpio.count("@") != 1:
+        return False
+    return limpio in CORREOS_AUTORIZADOS or limpio.split("@")[1] in DOMINIOS_AUTORIZADOS
+
+
+#: Identificador del curso, derivado del informe oficial: `rbd-curso`.
 _RE_CURSO_ID = re.compile(r"^[0-9]{3,7}-[0-9]{1,2}[a-h]$")
+
+#: Carpeta de una tanda de archivos subidos. La genera el cliente al azar y no
+#: describe al curso a propósito: cuál es el curso sólo se sabe después de leer
+#: el informe oficial, así que dejar que el cliente lo nombre antes obliga a
+#: inventarlo, y todas las tandas acabarían compartiendo carpeta.
+_RE_LOTE = re.compile(r"^[a-z0-9]{8,40}$")
 
 _PLANTILLA = pathlib.Path(__file__).parent / "plantilla" / "index.html"
 
@@ -63,7 +95,20 @@ _PLANTILLA = pathlib.Path(__file__).parent / "plantilla" / "index.html"
 
 
 def _bucket():
-    return storage.bucket(BUCKET or None)
+    """Bucket de Storage del proyecto, con un fallo legible si no se resuelve.
+
+    `storage.bucket(None)` lanza un ValueError seco cuando el entorno no trae
+    `storageBucket`, y eso llega al docente como un «internal» sin pistas.
+    """
+    nombre = BUCKET or (app.options.get("storageBucket") or "")
+    if not nombre:
+        proyecto = os.environ.get("GCLOUD_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+        nombre = f"{proyecto}.firebasestorage.app" if proyecto else ""
+    if not nombre:
+        raise RuntimeError(
+            "No se pudo determinar el bucket de Storage. Defina JUMPDIA_BUCKET."
+        )
+    return storage.bucket(nombre)
 
 
 def _ruta(uid: str, curso_id: str, ranura: str) -> str:
@@ -71,11 +116,21 @@ def _ruta(uid: str, curso_id: str, ranura: str) -> str:
 
 
 def _exigir_sesion(req: https_fn.CallableRequest) -> str:
-    """Devuelve el `uid` del docente o rechaza la llamada."""
+    """Devuelve el `uid` del docente, o rechaza si no tiene acceso."""
     if req.auth is None or not req.auth.uid:
         raise https_fn.HttpsError(
             https_fn.FunctionsErrorCode.UNAUTHENTICATED,
             "Inicie sesión para generar el informe.",
+        )
+
+    reclamos = req.auth.token or {}
+    correo = reclamos.get("email", "")
+    # Se exige el correo verificado además de la lista: sin eso, un proveedor
+    # que no valide el correo permitiría entrar declarando uno ajeno.
+    if not reclamos.get("email_verified") or not correo_autorizado(correo):
+        raise https_fn.HttpsError(
+            https_fn.FunctionsErrorCode.PERMISSION_DENIED,
+            f"La cuenta {correo or 'usada'} no tiene acceso a este sistema.",
         )
     return req.auth.uid
 
@@ -153,10 +208,16 @@ def generar_informe(req: https_fn.CallableRequest) -> dict[str, Any]:
     debe poder verlas antes de dar el informe por bueno.
     """
     uid = _exigir_sesion(req)
-    curso_id = _exigir_curso_id(req.data or {})
-    estricto = bool((req.data or {}).get("estricto", True))
+    datos = req.data or {}
+    lote_id = str(datos.get("loteId", "")).strip().lower()
+    if not _RE_LOTE.match(lote_id):
+        raise https_fn.HttpsError(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            "loteId ausente o mal formado.",
+        )
+    estricto = bool(datos.get("estricto", True))
 
-    archivos = {ranura: _descargar(uid, curso_id, ranura) for ranura in RANURAS}
+    archivos = {ranura: _descargar(uid, lote_id, ranura) for ranura in RANURAS}
     faltan = [r for r, obligatorio in RANURAS.items() if obligatorio and archivos[r] is None]
     if faltan:
         raise https_fn.HttpsError(
@@ -181,6 +242,24 @@ def generar_informe(req: https_fn.CallableRequest) -> dict[str, Any]:
         raise https_fn.HttpsError(
             https_fn.FunctionsErrorCode.INVALID_ARGUMENT, str(exc)
         ) from exc
+    except Exception as exc:
+        # Sin esto, cualquier fallo inesperado llega al docente como un
+        # «internal» sin más, que no le dice nada ni permite avanzar.
+        logging.exception("fallo inesperado en la ingesta del lote %s", lote_id)
+        raise https_fn.HttpsError(
+            https_fn.FunctionsErrorCode.INTERNAL,
+            f"Fallo inesperado al procesar los archivos: {type(exc).__name__}: {exc}",
+        ) from exc
+
+    # Cuál es el curso se sabe al leer el informe oficial, no antes.
+    meta = salida.D["meta"]
+    curso_id = f"{meta['rbd']}-{meta['curso']}".lower().replace("°", "").replace(" ", "")
+    if not _RE_CURSO_ID.match(curso_id):
+        raise https_fn.HttpsError(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            f"No se pudo identificar el curso desde el informe oficial "
+            f"(RBD «{meta['rbd']}», curso «{meta['curso']}»).",
+        )
 
     cliente = firestore.client()
     doc = cliente.document(f"cursos/{uid}_{curso_id}")
@@ -188,6 +267,7 @@ def generar_informe(req: https_fn.CallableRequest) -> dict[str, Any]:
         {
             "uid": uid,
             "cursoId": curso_id,
+            "loteId": lote_id,
             "D": salida.D,
             "avisos": salida.avisos,
             "generado": firestore.SERVER_TIMESTAMP,
@@ -204,17 +284,52 @@ def generar_informe(req: https_fn.CallableRequest) -> dict[str, Any]:
 # --- 3 · Entrega del informe ---------------------------------------------
 
 
-@https_fn.on_request(cors=options.CorsOptions(cors_origins=["*"], cors_methods=["get"]))
+class _SinAcceso(Exception):
+    """El solicitante no acreditó una sesión válida y autorizada."""
+
+
+def _uid_del_portador(req: https_fn.Request) -> str:
+    """Verifica el token de la cabecera `Authorization` y devuelve su `uid`.
+
+    Este endpoint entrega un informe con nombres y resultados de estudiantes,
+    así que no puede servirse por el `uid` que traiga la URL: eso lo dejaría
+    abierto a cualquiera que probara identificadores. El `uid` sale del token
+    firmado, nunca de la petición.
+    """
+    cabecera = req.headers.get("Authorization", "")
+    if not cabecera.startswith("Bearer "):
+        raise _SinAcceso("Falta la sesión: abra el informe desde la aplicación.")
+
+    try:
+        reclamos = fb_auth.verify_id_token(cabecera[len("Bearer ") :])
+    except Exception as exc:
+        raise _SinAcceso("La sesión no es válida o expiró. Vuelva a entrar.") from exc
+
+    if not reclamos.get("email_verified") or not correo_autorizado(reclamos.get("email")):
+        raise _SinAcceso("Esta cuenta no tiene acceso a este sistema.")
+    return reclamos["uid"]
+
+
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"https://jumpmathv2\.web\.app", r"https://jumpmathv2\.firebaseapp\.com"],
+        cors_methods=["get"],
+    )
+)
 def informe(req: https_fn.Request) -> https_fn.Response:
     """Sirve el HTML autocontenido con el `D` del curso ya inyectado.
 
     Es la forma que describe la guía §3: «el backend produce ese `D` y sirve
     el HTML». No hay build ni hidratación en el cliente.
     """
-    uid = req.args.get("uid", "")
+    try:
+        uid = _uid_del_portador(req)
+    except _SinAcceso as exc:
+        return https_fn.Response(str(exc), status=401)
+
     curso_id = req.args.get("curso", "").lower()
-    if not uid or not _RE_CURSO_ID.match(curso_id):
-        return https_fn.Response("Faltan los parámetros uid y curso.", status=400)
+    if not _RE_CURSO_ID.match(curso_id):
+        return https_fn.Response("Falta el parámetro curso.", status=400)
 
     doc = firestore.client().document(f"cursos/{uid}_{curso_id}").get()
     if not doc.exists or "D" not in (doc.to_dict() or {}):
@@ -226,8 +341,8 @@ def informe(req: https_fn.Request) -> https_fn.Response:
         status=200,
         headers={
             "Content-Type": "text/html; charset=utf-8",
-            # El informe cambia sólo cuando se regenera: se revalida siempre.
-            "Cache-Control": "private, no-cache",
+            # Lleva datos personales: nunca en una caché compartida.
+            "Cache-Control": "private, no-store",
         },
     )
 

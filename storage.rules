@@ -1,14 +1,27 @@
 rules_version = '2';
 
-// Cada docente escribe sólo bajo su propio uid. Se acotan tipo y tamaño en la
-// regla y no sólo en la interfaz: el Paso 1 es una pantalla web y cualquiera
-// puede llamar al endpoint de subida por fuera de ella.
+// Cada docente escribe sólo bajo su propio uid, y sólo si su cuenta está
+// autorizada. Se acotan tipo y tamaño en la regla y no sólo en la interfaz: el
+// Paso 1 es una página web y cualquiera puede llamar al endpoint por fuera.
+//
+// La lista de acceso se repite aquí y en firestore.rules porque cada servicio
+// evalúa las suyas; `tests/` comprueba que no se separen de las funciones.
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function autorizado() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          request.auth.token.email.lower() in ['javier.neo@gmail.com']
+          || request.auth.token.email.lower().matches('.*@jumpmath[.]cl')
+        );
+    }
+
     match /cursos/{uid}/{cursoId}/{ranura}/{archivo} {
 
       function esDuenio() {
-        return request.auth != null && request.auth.uid == uid;
+        return autorizado() && request.auth.uid == uid;
       }
 
       function ranuraValida() {

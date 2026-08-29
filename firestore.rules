@@ -1,22 +1,37 @@
 rules_version = '2';
 
-// Los informes contienen nombres y resultados de estudiantes: cada docente
-// accede sólo a los cursos que subió. La escritura del objeto `D` queda
-// reservada a las Cloud Functions, que entran con credenciales de servicio y
-// no pasan por estas reglas: el cliente nunca puede inventar un `D`.
+// Los informes contienen nombres y resultados de estudiantes. Dos condiciones
+// para leer: la cuenta debe estar autorizada, y el curso debe ser suyo.
+//
+// La lista de acceso vive aquí además de en las Cloud Functions a propósito.
+// Las reglas son la defensa real: el SDK de Firestore se puede llamar desde
+// fuera de la interfaz, así que una comprobación que sólo estuviera en el
+// cliente o en las funciones no protegería la base de datos.
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function autorizado() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          request.auth.token.email.lower() in ['javier.neo@gmail.com']
+          || request.auth.token.email.lower().matches('.*@jumpmath[.]cl')
+        );
+    }
+
     match /cursos/{cursoDoc} {
       function esDuenio() {
-        return request.auth != null && resource.data.uid == request.auth.uid;
+        return autorizado() && resource.data.uid == request.auth.uid;
       }
 
       allow read: if esDuenio();
+      // El objeto `D` lo escriben sólo las Cloud Functions, que entran con
+      // credenciales de servicio y no pasan por estas reglas: desde el cliente
+      // nadie puede inventar un informe.
       allow create, update, delete: if false;
 
       match /versiones/{versionId} {
-        allow read: if request.auth != null
+        allow read: if autorizado()
           && get(/databases/$(database)/documents/cursos/$(cursoDoc)).data.uid == request.auth.uid;
         allow write: if false;
       }
