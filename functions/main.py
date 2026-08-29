@@ -15,13 +15,13 @@ Las funciones son de 2ª generación y viven en `southamerica-west1`
 from __future__ import annotations
 
 import datetime as dt
+import os
 import pathlib
 import re
 from typing import Any
 
 from firebase_admin import firestore, initialize_app, storage
 from firebase_functions import https_fn, options, storage_fn
-from firebase_functions.params import StringParam
 from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, inyectar_D
 
 REGION = "southamerica-west1"
@@ -29,8 +29,13 @@ options.set_global_options(region=REGION, memory=options.MemoryOption.MB_512)
 
 app = initialize_app()
 
-#: Bucket de Storage. Se deja parametrizable para los entornos de prueba.
-BUCKET = StringParam("JUMPDIA_BUCKET", default="")
+#: Bucket de Storage. Vacío significa el bucket por omisión del proyecto, que
+#: es lo normal; la variable sólo existe para apuntar a otro en pruebas.
+#:
+#: Se lee del entorno y no con `params.StringParam`: un parámetro declarado
+#: hace que el CLI pregunte su valor en cada despliegue y lo guarde en un
+#: `.env` por proyecto, ceremonia que aquí no aporta nada.
+BUCKET = os.environ.get("JUMPDIA_BUCKET", "")
 
 #: Los cuatro archivos obligatorios más el plan anual opcional (guía §4).
 RANURAS: dict[str, bool] = {
@@ -51,7 +56,7 @@ _PLANTILLA = pathlib.Path(__file__).parent / "plantilla" / "index.html"
 
 
 def _bucket():
-    return storage.bucket(BUCKET.value or None)
+    return storage.bucket(BUCKET or None)
 
 
 def _ruta(uid: str, curso_id: str, ranura: str) -> str:
