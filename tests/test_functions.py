@@ -105,9 +105,21 @@ def _config_del_cliente() -> dict[str, str]:
     return dict(re.findall(r'(\w+)\s*[:=]\s*"([^"]+)"', fuente))
 
 
-def test_la_region_del_cliente_coincide_con_la_de_las_funciones(main):
-    """Un desajuste de región no se ve al desplegar: falla con NOT_FOUND en uso."""
+def test_la_region_es_la_misma_en_los_tres_archivos(main):
+    """Un desajuste de región no se ve al desplegar: falla con NOT_FOUND en uso.
+
+    Y el `rewrite` de Hosting apunta a la región de la función: si se separa,
+    `/api/informe` devuelve 404 aunque la función esté desplegada y sana.
+    """
+    import json
+
+    from tests.conftest import RAIZ
+
+    config = json.loads((RAIZ / "firebase.json").read_text(encoding="utf-8"))
+    rewrite = config["hosting"]["rewrites"][0]["region"]
+
     assert _config_del_cliente().get("region") == main.REGION
+    assert rewrite == main.REGION
 
 
 def test_el_proyecto_del_cliente_coincide_con_firebaserc():

@@ -207,6 +207,14 @@ primeras:
 | **Cloud Storage** | Build → Storage → *Comenzar* | `storage` no encuentra el bucket |
 | Acceso con **Google** | Authentication → Sign-in method | El deploy pasa, pero el docente no puede entrar |
 
+**La región de las funciones la manda el bucket.** Una función que escucha
+Cloud Storage debe vivir en la región de ese bucket, y la ubicación por defecto
+de un proyecto Firebase se fija al crearlo y no se puede cambiar después. Aquí
+es `us-east1`. Está declarada en tres sitios —`functions/main.py`,
+el `rewrite` de `firebase.json` y `public/firebase-config.js`— y un test
+comprueba que no se separen: si el `rewrite` se desalinea, `/api/informe`
+devuelve 404 aunque la función esté sana, y eso no se ve al desplegar.
+
 El frontend ya apunta al proyecto **`jumpmathv2`** en
 `public/firebase-config.js`. Esos valores son públicos por diseño —viajan al
 navegador en cualquier app web de Firebase e identifican el proyecto, no
@@ -238,7 +246,7 @@ firebase emulators:start        # Hosting :5000 · Functions :5001 · UI :4000
 | **Hosting** | Sirve el informe y reescribe `/api/informe` a la función. |
 | **Authentication** | Identifica al docente; su `uid` acota lo que puede leer y escribir. |
 | **Cloud Storage** | Recibe los archivos en `cursos/{uid}/{cursoId}/{ranura}/`. |
-| **Cloud Functions (2ª gen, Python 3.12)** | Ejecuta la ingesta y sirve el informe. Región `southamerica-west1`. |
+| **Cloud Functions (2ª gen, Python 3.12)** | Ejecuta la ingesta y sirve el informe. Región `us-east1`, la del bucket. |
 | **Firestore** | Guarda el `D` de cada curso y su historial en `versiones/`. |
 | **App Check** | Opcional; se activa con `appCheckSiteKey`. |
 | **Emulator Suite** | Desarrollo local de los cinco servicios. |

@@ -19,7 +19,7 @@ export const firebaseConfig = {
 
 // Región de las Cloud Functions. Debe coincidir con `REGION` en
 // functions/main.py: si no, las llamadas fallan con NOT_FOUND.
-export const region = "southamerica-west1";
+export const region = "us-east1";
 
 // Clave pública de reCAPTCHA v3 para App Check. Se obtiene en la consola de
 // Firebase → App Check → Apps → reCAPTCHA v3. Con `null` queda desactivado.

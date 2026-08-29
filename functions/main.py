@@ -8,8 +8,13 @@ Flujo completo del Paso 1 de la guía:
 3. `informe` (HTTP) sirve el HTML autocontenido con ese `D` ya inyectado.
 4. `exportar_pdf` deja la exportación en manos del navegador (guía §6).
 
-Las funciones son de 2ª generación y viven en `southamerica-west1`
-(Santiago), que es la región con menor latencia para los colegios chilenos.
+Las funciones son de 2ª generación y viven en `us-east1`, la región del bucket
+de Storage del proyecto. No es una preferencia: una función que escucha un
+bucket tiene que estar en su misma región, y la ubicación por defecto de un
+proyecto Firebase se fija al crearlo y no se puede cambiar. Además la ingesta
+descarga de ese bucket varios megas por curso, así que compartir región le
+ahorra latencia y tráfico de salida; frente a eso, el viaje extra de la
+petición del docente es despreciable.
 """
 
 from __future__ import annotations
@@ -24,7 +29,9 @@ from firebase_admin import firestore, initialize_app, storage
 from firebase_functions import https_fn, options, storage_fn
 from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, inyectar_D
 
-REGION = "southamerica-west1"
+#: Debe coincidir con la región del bucket y con `firebase.json` y
+#: `firebase-config.js`. Hay un test que lo comprueba.
+REGION = "us-east1"
 options.set_global_options(region=REGION, memory=options.MemoryOption.MB_512)
 
 app = initialize_app()

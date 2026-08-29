@@ -36,7 +36,7 @@
       {
         "source": "/api/informe",
         "function": "informe",
-        "region": "southamerica-west1"
+        "region": "us-east1"
       }
     ],
     "headers": [

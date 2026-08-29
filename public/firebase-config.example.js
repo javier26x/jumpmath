@@ -15,7 +15,7 @@ export const firebaseConfig = {
 };
 
 // Debe coincidir con `REGION` en functions/main.py.
-export const region = "southamerica-west1";
+export const region = "us-east1";
 
 // Clave pública de reCAPTCHA v3 para App Check. `null` lo desactiva.
 export const appCheckSiteKey = null;
