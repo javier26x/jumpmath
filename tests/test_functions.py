@@ -47,8 +47,22 @@ def monkeypatch_module():
 
 
 def test_el_modulo_carga_y_declara_las_funciones(main):
-    for nombre in ("registrar_subida", "generar_informe", "informe", "obtener_informe"):
+    for nombre in ("generar_informe", "informe", "obtener_informe", "listar_informes"):
         assert hasattr(main, nombre), f"falta la función {nombre}"
+
+
+def test_no_hay_disparador_de_storage(main):
+    """Se retiró a propósito.
+
+    `registrar_subida` anotaba cada archivo subido en Firestore para que la
+    interfaz marcara «Cargado», pero la interfaz nunca lo leyó: marca la subida
+    cuando `uploadBytes` resuelve. Y desde que la carpeta de subida es un lote
+    al azar, escribía documentos basura `cursos/{uid}_{lote}`. Era además la
+    única función con disparador de Eventarc, la que ató la región al bucket y
+    la que más costó desplegar.
+    """
+    assert not hasattr(main, "registrar_subida")
+    assert "storage_fn" not in dir(main)
 
 
 def test_ranuras_coinciden_con_la_guia(main):
@@ -64,6 +78,19 @@ def test_ranuras_coinciden_con_la_guia(main):
 @pytest.mark.parametrize("valido", ["1886-4a", "12345-8h", "100-1a"])
 def test_curso_id_valido(main, valido):
     assert main._exigir_curso_id({"cursoId": valido}) == valido
+
+
+@pytest.mark.parametrize("lote", ["c79cd375b8364041a8ee1a259c1e2c2e", "abcdefgh", "a" * 40])
+def test_lote_valido(main, lote):
+    assert main._RE_LOTE.match(lote)
+
+
+@pytest.mark.parametrize(
+    "lote", ["", "corto", "a" * 41, "1886-4a", "../x", "ABCDEFGH", "con espacio"]
+)
+def test_lote_invalido(main, lote):
+    """El lote es un segmento de ruta en Storage: sin travesía ni mayúsculas."""
+    assert not main._RE_LOTE.match(lote)
 
 
 @pytest.mark.parametrize(

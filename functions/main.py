@@ -5,8 +5,9 @@ Flujo completo del Paso 1 de la guía:
 1. El docente sube los archivos a Cloud Storage bajo su propio `uid`.
 2. `generar_informe` (callable) ejecuta la ingesta y guarda el `D` resultante
    en Firestore.
-3. `informe` (HTTP) sirve el HTML autocontenido con ese `D` ya inyectado.
-4. `exportar_pdf` deja la exportación en manos del navegador (guía §6).
+3. `informe` (HTTP) sirve el HTML autocontenido con ese `D` ya inyectado, y
+   `listar_informes` / `obtener_informe` permiten volver a abrirlo después.
+4. La exportación a PDF queda en manos del navegador (guía §6).
 
 Las funciones son de 2ª generación y viven en `us-east1`, la región del bucket
 de Storage del proyecto. No es una preferencia: una función que escucha un
@@ -28,7 +29,8 @@ from typing import Any
 
 from firebase_admin import auth as fb_auth
 from firebase_admin import firestore, initialize_app, storage
-from firebase_functions import https_fn, options, storage_fn
+from firebase_functions import https_fn, options
+from google.cloud.firestore_v1.base_query import FieldFilter
 from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, preparar_informe
 
 #: Debe coincidir con la región del bucket y con `firebase.json` y
@@ -160,43 +162,7 @@ def _descargar(uid: str, curso_id: str, ranura: str) -> Archivo | None:
     return Archivo(nombre=blob.name.rsplit("/", 1)[-1], datos=blob.download_as_bytes())
 
 
-# --- 1 · Registro de subidas ---------------------------------------------
-
-
-@storage_fn.on_object_finalized()
-def registrar_subida(evento: storage_fn.CloudEvent[storage_fn.StorageObjectData]) -> None:
-    """Anota en Firestore cada archivo que llega, para pintar el Paso 1.
-
-    Que la interfaz marque «Cargado» a partir de un documento de Firestore y
-    no de un evento del navegador evita el caso en que la subida falló a
-    medias y el botón «Generar informe» quedó habilitado igual.
-    """
-    partes = (evento.data.name or "").split("/")
-    if len(partes) < 4 or partes[0] != "cursos":
-        return
-    _, uid, curso_id, ranura = partes[:4]
-    if ranura not in RANURAS:
-        return
-
-    cliente = firestore.client()
-    cliente.document(f"cursos/{uid}_{curso_id}").set(
-        {
-            "uid": uid,
-            "cursoId": curso_id,
-            "archivos": {
-                ranura: {
-                    "nombre": partes[-1],
-                    "tamano": evento.data.size,
-                    "contentType": evento.data.content_type,
-                    "actualizado": firestore.SERVER_TIMESTAMP,
-                }
-            },
-        },
-        merge=True,
-    )
-
-
-# --- 2 · Ingesta ----------------------------------------------------------
+# --- 1 · Ingesta ----------------------------------------------------------
 
 
 @https_fn.on_call(timeout_sec=300, memory=options.MemoryOption.GB_1)
@@ -281,7 +247,7 @@ def generar_informe(req: https_fn.CallableRequest) -> dict[str, Any]:
     return {"D": salida.D, "avisos": salida.avisos, "cursoId": curso_id}
 
 
-# --- 3 · Entrega del informe ---------------------------------------------
+# --- 2 · Entrega del informe ---------------------------------------------
 
 
 class _SinAcceso(Exception):
@@ -359,3 +325,43 @@ def obtener_informe(req: https_fn.CallableRequest) -> dict[str, Any]:
         )
     datos = doc.to_dict() or {}
     return {"D": datos.get("D"), "avisos": datos.get("avisos", [])}
+
+
+@https_fn.on_call()
+def listar_informes(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """Informes ya generados por quien llama, del más reciente al más antiguo.
+
+    Es lo que permite volver a abrir un informe sin subir los archivos otra
+    vez. Sólo se devuelve el resumen: el `D` completo pesa decenas de KB por
+    curso y aquí basta con identificarlo.
+    """
+    uid = _exigir_sesion(req)
+    consulta = (
+        firestore.client()
+        .collection("cursos")
+        .where(filter=FieldFilter("uid", "==", uid))
+        .stream()
+    )
+
+    informes = []
+    for doc in consulta:
+        datos = doc.to_dict() or {}
+        if "D" not in datos:
+            continue
+        meta = datos["D"].get("meta", {})
+        generado = datos.get("generado")
+        informes.append(
+            {
+                "cursoId": datos.get("cursoId", ""),
+                "colegio": meta.get("colegio", ""),
+                "curso": meta.get("curso", ""),
+                "prueba": meta.get("prueba", ""),
+                "n": meta.get("n"),
+                "promGlobal": datos["D"].get("promGlobal"),
+                "generado": generado.isoformat() if hasattr(generado, "isoformat") else None,
+                "avisos": len(datos.get("avisos", [])),
+            }
+        )
+
+    informes.sort(key=lambda i: i["generado"] or "", reverse=True)
+    return {"informes": informes}

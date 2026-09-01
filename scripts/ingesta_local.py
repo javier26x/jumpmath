@@ -23,7 +23,7 @@ import sys
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "functions"))
 
-from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, inyectar_D  # noqa: E402
+from jumpdia import Archivo, Entrada, ErrorIngesta, ensamblar, preparar_informe  # noqa: E402
 
 PLANTILLA = RAIZ / "public" / "index.html"
 
@@ -96,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"\nD escrito en {args.json}")
     if args.salida:
-        html = inyectar_D(PLANTILLA.read_text(encoding="utf-8"), salida.D)
+        html = preparar_informe(PLANTILLA.read_text(encoding="utf-8"), salida.D)
         args.salida.write_text(html, encoding="utf-8")
         print(f"Informe escrito en {args.salida}")
     return 0

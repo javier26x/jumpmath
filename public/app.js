@@ -12,6 +12,24 @@
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2";
 
+/**
+ * MIME por extensión, para cuando el navegador entrega `File.type` vacío —
+ * pasa con .xlsx en Windows sin Office instalado. Sin esto la subida iría como
+ * `application/octet-stream` y las reglas de Storage la rechazarían.
+ */
+const MIME_POR_EXTENSION = {
+  pdf: "application/pdf",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  csv: "text/csv",
+};
+
+function tipoDeArchivo(archivo) {
+  if (archivo.type) return archivo.type;
+  const extension = archivo.name.split(".").pop().toLowerCase();
+  return MIME_POR_EXTENSION[extension] || "application/octet-stream";
+}
+
 /** Ranura del backend que corresponde a cada casillero del Paso 1. */
 const RANURAS = {
   dia: "dia_oficial",
@@ -46,13 +64,6 @@ const proto = window.InformeDIA;
 if (proto) arrancar().catch(reportarFallo);
 
 async function arrancar() {
-  // Un informe ya generado no necesita el Paso 1: los archivos se procesaron y
-  // volver a mostrar el formulario invita a subirlos de nuevo sin motivo.
-  if (location.pathname.startsWith(RUTA_INFORME)) {
-    document.getElementById("uploadPanel")?.remove();
-    return;
-  }
-
   let config;
   try {
     config = await import("/firebase-config.js");
@@ -118,6 +129,7 @@ async function arrancar() {
     conectado = true;
     conectarCasilleros(storage, bucket, usuario);
     conectarBotonGenerar(functions, fns, usuario);
+    cargarListaInformes(functions, fns, usuario).catch(reportarFallo);
   });
 }
 
@@ -255,7 +267,7 @@ function conectarCasilleros(storage, bucket, usuario) {
       const ruta = `cursos/${usuario.uid}/${loteId()}/${RANURAS[id]}/${archivo.name}`;
       try {
         await storage.uploadBytes(storage.ref(bucket, ruta), archivo, {
-          contentType: archivo.type || "application/octet-stream",
+          contentType: tipoDeArchivo(archivo),
         });
         proto.loaded[id] = archivo.name;
         slot.classList.add("ok");
@@ -283,8 +295,15 @@ function conectarBotonGenerar(functions, fns, usuario) {
     try {
       const generar = functions.httpsCallable(fns, "generar_informe");
       const { data } = await generar({ loteId: loteId() });
-      mostrarAvisos(data.avisos || []);
-      await abrirInforme(usuario, data.cursoId);
+      const avisos = data.avisos || [];
+      // Los avisos se dejan en la app, debajo del visor: al volver siguen ahí.
+      mostrarAvisos(avisos);
+      boton.disabled = false;
+      boton.textContent = etiqueta;
+      pista.textContent = "Informe generado.";
+      loteActual = null; // la siguiente tanda va a otra carpeta
+      await cargarListaInformes(functions, fns, usuario);
+      await abrirInforme(usuario, data.cursoId, avisos.length);
     } catch (error) {
       boton.disabled = false;
       boton.textContent = etiqueta;
@@ -303,14 +322,19 @@ function conectarBotonGenerar(functions, fns, usuario) {
 }
 
 /**
- * Pide el informe al backend y lo muestra.
+ * Pide el informe al backend y lo muestra en un visor sobre la aplicación.
  *
- * Se descarga con `fetch` y el token en la cabecera, en vez de navegar a la
- * URL: el informe lleva nombres y resultados de estudiantes, así que el
- * servidor exige una sesión válida y deduce de ella de quién es el curso. Una
- * URL con el identificador dentro se podría abrir —o compartir— sin sesión.
+ * Se descarga con `fetch` y el token en la cabecera: el informe lleva nombres
+ * y resultados de estudiantes, así que el servidor exige una sesión válida y
+ * deduce de ella de quién es el curso. Y se pinta en un iframe, no en este
+ * documento ni en una URL de blob: el informe vuelve a declarar `const D`, y
+ * escribirlo sobre este documento lo hace morir con «Identifier 'D' has
+ * already been declared»; un blob lo evita, pero su URL muere con la pestaña
+ * que la creó, así que un F5 o un duplicar pestaña dan una página de error.
+ * En el iframe el informe tiene su ámbito, la aplicación sigue viva debajo y
+ * cualquier informe se vuelve a abrir desde la lista.
  */
-async function abrirInforme(usuario, cursoId) {
+async function abrirInforme(usuario, cursoId, nAvisos = 0) {
   const token = await usuario.getIdToken();
   const respuesta = await fetch(`${RUTA_INFORME}?curso=${encodeURIComponent(cursoId)}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -318,13 +342,67 @@ async function abrirInforme(usuario, cursoId) {
   if (!respuesta.ok) {
     throw new Error(await respuesta.text());
   }
-  // Se abre como documento nuevo y no con `document.write` sobre este: el
-  // informe vuelve a declarar `const D`, y reescribir el documento actual no
-  // reinicia el ámbito global de JavaScript. La segunda declaración lanza
-  // «Identifier 'D' has already been declared», el script entero muere y el
-  // informe sale en blanco. Un blob es un documento aparte, con su ámbito.
-  const blob = new Blob([await respuesta.text()], { type: "text/html" });
-  location.href = URL.createObjectURL(blob);
+  const resumen = nAvisos
+    ? `${nAvisos} aviso(s) de la ingesta: se muestran al volver`
+    : "";
+  mostrarInforme(await respuesta.text(), cursoId, resumen);
+}
+
+/** Visor a pantalla completa con el informe; «Volver» devuelve la aplicación. */
+function mostrarInforme(html, titulo, resumen) {
+  let visor = document.getElementById("visorInforme");
+  if (!visor) {
+    visor = document.createElement("div");
+    visor.id = "visorInforme";
+    visor.className = "visor";
+    visor.innerHTML =
+      '<div class="visor-barra">' +
+      '<button type="button" class="visor-volver">← Volver a la carga</button>' +
+      '<span class="visor-titulo"></span>' +
+      '<span class="visor-resumen"></span>' +
+      "</div>" +
+      '<iframe class="visor-marco" title="Informe generado"></iframe>';
+    visor.querySelector(".visor-volver").onclick = () => visor.remove();
+    document.body.appendChild(visor);
+  }
+  visor.querySelector(".visor-titulo").textContent = `Informe ${titulo}`;
+  visor.querySelector(".visor-resumen").textContent = resumen || "";
+  visor.querySelector(".visor-marco").srcdoc = html;
+}
+
+/** Lista de informes ya generados, para volver a abrirlos sin subir nada. */
+async function cargarListaInformes(functions, fns, usuario) {
+  const listar = functions.httpsCallable(fns, "listar_informes");
+  const { data } = await listar({});
+  const informes = data.informes || [];
+
+  const panel = document.getElementById("uploadPanel");
+  let caja = document.getElementById("listaInformes");
+  if (!caja) {
+    caja = document.createElement("div");
+    caja.id = "listaInformes";
+    caja.className = "note";
+    panel.appendChild(caja);
+  }
+  if (!informes.length) {
+    caja.innerHTML = "<b>Todavía no hay informes generados con esta cuenta.</b>";
+    return;
+  }
+
+  caja.innerHTML =
+    "<b>Informes generados</b><ul>" +
+    informes
+      .map(
+        (i) =>
+          `<li>${escapar(i.colegio)} · <b>${escapar(i.curso)}</b> · ${escapar(i.prueba)} — ` +
+          `${i.n ?? "?"} estudiantes · ${i.promGlobal ?? "?"}% global ` +
+          `<button type="button" class="fbtn" data-curso="${escapar(i.cursoId)}">Ver informe</button></li>`,
+      )
+      .join("") +
+    "</ul>";
+  caja.querySelectorAll("button[data-curso]").forEach((boton) => {
+    boton.onclick = () => abrirInforme(usuario, boton.dataset.curso).catch(reportarFallo);
+  });
 }
 
 /** Los avisos no son errores: son los supuestos que tomó la ingesta. */

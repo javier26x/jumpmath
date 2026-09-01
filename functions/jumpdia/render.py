@@ -47,10 +47,15 @@ def preparar_informe(plantilla: str, D: dict[str, Any]) -> str:
     vez. Lo que queda es lo que describe la guía §3: un HTML autocontenido.
     """
     html = inyectar_D(plantilla, D)
+    # Se falla en voz alta, como `inyectar_D`: si alguien reformatea la etiqueta
+    # del script y esto no la encuentra, el informe saldría con la aplicación
+    # pegada y volvería a quedar en blanco sin que nada lo avise.
+    if _MARCA_APP not in html:
+        raise ValueError(f"la plantilla no contiene «{_MARCA_APP}»")
+    if "</head>" not in html:
+        raise ValueError("la plantilla no contiene «</head>»")
     html = html.replace(_MARCA_APP, "")
-    if "</head>" in html:
-        return html.replace("</head>", _ESTILO_INFORME + "</head>", 1)
-    return _ESTILO_INFORME + html
+    return html.replace("</head>", _ESTILO_INFORME + "</head>", 1)
 
 
 def inyectar_D(plantilla: str, D: dict[str, Any]) -> str:

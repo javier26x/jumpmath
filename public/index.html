@@ -155,6 +155,16 @@
     .card{box-shadow:none}
     .top{page-break-after:avoid}
   }
+
+/* Visor del informe generado (lo crea app.js sobre la aplicación) */
+.visor{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:#fff}
+.visor-barra{display:flex;align-items:center;gap:14px;padding:8px 16px;background:var(--acc,#1f6f5f);color:#fff;font-size:14px}
+.visor-volver{border:1px solid rgba(255,255,255,.5);background:transparent;color:#fff;padding:5px 12px;border-radius:999px;cursor:pointer;font:inherit}
+.visor-volver:hover,.visor-volver:focus-visible{background:rgba(255,255,255,.15);outline:none}
+.visor-titulo{font-weight:600}
+.visor-resumen{margin-left:auto;opacity:.85}
+.visor-marco{flex:1;border:0;width:100%}
+@media print{.visor-barra{display:none}}
 </style>
 </head>
 <body>

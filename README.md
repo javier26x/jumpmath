@@ -24,7 +24,7 @@ archivos del colegio  ──▶  Cloud Storage  ──▶  Cloud Function (Pytho
 | Ruta | Qué es |
 |---|---|
 | `functions/jumpdia/` | El pipeline de ingesta. No depende de Firebase ni de red. |
-| `functions/main.py` | Las Cloud Functions que lo exponen. |
+| `functions/main.py` | Las cuatro Cloud Functions: ingesta, entrega del informe, y listado y recuperación de informes ya generados. |
 | `public/index.html` | El informe: es a la vez la app y la plantilla que rellena el backend. |
 | `public/app.js` | Conecta el Paso 1 con Storage y con la función de ingesta. |
 | `scripts/ingesta_local.py` | Corre la ingesta sin Firebase, para depurar planillas. |
@@ -207,10 +207,9 @@ primeras:
 | **Cloud Storage** | Build → Storage → *Comenzar* | `storage` no encuentra el bucket |
 | Acceso con **Google** | Authentication → Sign-in method | El deploy pasa, pero el docente no puede entrar |
 
-**La región de las funciones la manda el bucket.** Una función que escucha
-Cloud Storage debe vivir en la región de ese bucket, y la ubicación por defecto
-de un proyecto Firebase se fija al crearlo y no se puede cambiar después. Aquí
-es `us-east1`. Está declarada en tres sitios —`functions/main.py`,
+**La región de las funciones es la del bucket**, `us-east1`. Ya no es una
+obligación —se retiró el disparador de Storage que la imponía— pero sigue
+conviniendo: la ingesta descarga de ahí varios megas por curso. Está declarada en tres sitios —`functions/main.py`,
 el `rewrite` de `firebase.json` y `public/firebase-config.js`— y un test
 comprueba que no se separen: si el `rewrite` se desalinea, `/api/informe`
 devuelve 404 aunque la función esté sana, y eso no se ve al desplegar.
@@ -245,7 +244,7 @@ firebase emulators:start        # Hosting :5000 · Functions :5001 · UI :4000
 |---|---|
 | **Hosting** | Sirve el informe y reescribe `/api/informe` a la función. |
 | **Authentication** | Identifica al docente; su `uid` acota lo que puede leer y escribir. |
-| **Cloud Storage** | Recibe los archivos en `cursos/{uid}/{cursoId}/{ranura}/`. |
+| **Cloud Storage** | Recibe los archivos en `cursos/{uid}/{lote}/{ranura}/`. El lote es una carpeta al azar por tanda: cuál es el curso sólo se sabe al leer el informe oficial. |
 | **Cloud Functions (2ª gen, Python 3.12)** | Ejecuta la ingesta y sirve el informe. Región `us-east1`, la del bucket. |
 | **Firestore** | Guarda el `D` de cada curso y su historial en `versiones/`. |
 | **App Check** | Opcional; se activa con `appCheckSiteKey`. |
@@ -278,7 +277,9 @@ detrás de las reglas de seguridad:
 - El endpoint que sirve el informe exige el token de sesión en la cabecera y
   saca de él de quién es el curso. El `uid` **no** viaja en la URL: si viajara,
   bastaría probar identificadores para leer el informe de otro curso, y una URL
-  así se puede compartir o quedar en un historial.
+  así se puede compartir o quedar en un historial. Por lo mismo el informe se
+  muestra en un visor dentro de la aplicación y se vuelve a abrir desde su
+  lista de informes, no desde una dirección.
 - Storage y Firestore están particionados por `uid`: un docente sólo ve lo suyo.
 - El `D` lo escriben **sólo** las Cloud Functions, que entran con credenciales
   de servicio y no pasan por las reglas. Desde el cliente `D` es de sólo

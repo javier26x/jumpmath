@@ -159,3 +159,14 @@ def test_el_informe_servido_lleva_los_datos_del_curso(D_reconstruido):
     inicio = html.index("const D=") + len("const D=")
     releido, _ = json.JSONDecoder().raw_decode(html, inicio)
     assert releido == D_reconstruido
+
+
+def test_preparar_informe_falla_si_la_plantilla_cambia(D_reconstruido):
+    """Si no encuentra la etiqueta del script, avisa en vez de servir la app.
+
+    Un no-op silencioso reproduciría el informe en blanco sin que nada lo
+    delate; mejor que reviente en el primer test.
+    """
+    sin_script = "<html><head></head><body><script>const D={}</script></body></html>"
+    with pytest.raises(ValueError, match="app.js"):
+        preparar_informe(sin_script, D_reconstruido)
