@@ -168,6 +168,10 @@ def test_el_proyecto_del_cliente_coincide_con_firebaserc():
         ("JAVIER.NEO@Gmail.com", True),
         ("ana@jumpmath.cl", True),
         ("ana@JUMPMATH.CL", True),
+        ("ana@jumpmath.es", True),
+        # Parecidos que no son el dominio.
+        ("ana@jumpmath.com", False),
+        ("ana@jumpmath.cl.es", False),
         ("  ana@jumpmath.cl  ", True),
         ("otro@gmail.com", False),
         # Sufijo pegado: el dominio real es evil.cl, no jumpmath.cl.
@@ -227,7 +231,7 @@ def test_la_lista_de_acceso_es_la_misma_en_los_cuatro_archivos(main):
     from tests.conftest import RAIZ
 
     esperado = (set(main.CORREOS_AUTORIZADOS), set(main.DOMINIOS_AUTORIZADOS))
-    assert esperado == ({"javier.neo@gmail.com"}, {"jumpmath.cl"})
+    assert esperado == ({"javier.neo@gmail.com"}, {"jumpmath.cl", "jumpmath.es"})
 
     for archivo, extraer in (
         ("firestore.rules", _autorizados_en_reglas),

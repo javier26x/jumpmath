@@ -16,6 +16,7 @@ service cloud.firestore {
         && (
           request.auth.token.email.lower() in ['javier.neo@gmail.com']
           || request.auth.token.email.lower().matches('.*@jumpmath[.]cl')
+          || request.auth.token.email.lower().matches('.*@jumpmath[.]es')
         );
     }
 

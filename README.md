@@ -252,8 +252,8 @@ firebase emulators:start        # Hosting :5000 · Functions :5001 · UI :4000
 
 ### Quién puede entrar
 
-Sólo `javier.neo@gmail.com` y las cuentas `@jumpmath.cl`, con el correo
-verificado. La lista está en cuatro sitios porque cada capa evalúa la suya:
+Sólo `javier.neo@gmail.com` y las cuentas `@jumpmath.cl` y `@jumpmath.es`,
+con el correo verificado. La lista está en cuatro sitios porque cada capa evalúa la suya:
 
 | Archivo | Para qué |
 |---|---|

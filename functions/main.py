@@ -68,7 +68,7 @@ CORREOS_AUTORIZADOS = frozenset(
 )
 DOMINIOS_AUTORIZADOS = frozenset(
     dominio.strip().lower().lstrip("@")
-    for dominio in os.environ.get("JUMPDIA_DOMINIOS", "jumpmath.cl").split(",")
+    for dominio in os.environ.get("JUMPDIA_DOMINIOS", "jumpmath.cl,jumpmath.es").split(",")
     if dominio.strip()
 )
 

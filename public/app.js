@@ -49,7 +49,7 @@ const RUTA_INFORME = "/api/informe";
  * Un test verifica que las cuatro copias de la lista no se separen.
  */
 const CORREOS_AUTORIZADOS = ["javier.neo@gmail.com"];
-const DOMINIOS_AUTORIZADOS = ["jumpmath.cl"];
+const DOMINIOS_AUTORIZADOS = ["jumpmath.cl", "jumpmath.es"];
 
 function correoAutorizado(correo) {
   const limpio = (correo || "").trim().toLowerCase();
@@ -116,7 +116,7 @@ async function arrancar() {
         "Esta cuenta no tiene acceso",
         [
           `${usuario.email || "La cuenta usada"} no está autorizada.`,
-          "Entre con una cuenta @jumpmath.cl.",
+          "Entre con una cuenta @jumpmath.cl o @jumpmath.es.",
         ],
         "var(--r)",
       );
