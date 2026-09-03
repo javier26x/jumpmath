@@ -232,11 +232,15 @@ librería por URL. Dos tests comprueban que la región y el proyecto del cliente
 no se separen de los del backend, porque ese desajuste no se ve al desplegar:
 falla recién al usarlo.
 
-En local, con el emulador:
+En local, con la Emulator Suite:
 
 ```bash
 firebase emulators:start        # Hosting :5000 · Functions :5001 · UI :4000
 ```
+
+Para que la aplicación hable con los emuladores y no con el proyecto real,
+ponga `emuladores = true` en `public/firebase-config.js` mientras desarrolla
+(y no lo suba así). Los puertos que usa son los de `firebase.json`.
 
 ### Qué usa de la plataforma
 
@@ -269,6 +273,23 @@ cortesía. `test_la_lista_de_acceso_es_la_misma_en_los_cuatro_archivos`
 comprueba que no se separen —ni de más ni de menos— porque una regla más laxa
 que las funciones abre la base de datos sin que nadie lo note.
 
+### Cuánto tiempo viven los archivos subidos
+
+Los cinco archivos de cada tanda quedan en Storage después de la ingesta. Lo
+que el informe necesita ya está en Firestore (`D`), así que conservarlos sólo
+sirve para reprocesar, y a cambio son nombres y resultados de estudiantes
+acumulándose sin fecha de caducidad. `storage.lifecycle.json` los borra a los
+30 días. El CLI de Firebase no despliega políticas de ciclo de vida; se aplica
+una vez con:
+
+```bash
+gsutil lifecycle set storage.lifecycle.json gs://jumpmathv2.firebasestorage.app
+```
+
+Treinta días es un punto de partida, no una conclusión: es una decisión sobre
+datos personales que conviene tomar a sabiendas. Cambiar el plazo es editar
+`age` y volver a aplicar.
+
 ### Sobre los datos personales
 
 Los informes traen nombres y resultados de estudiantes. Las decisiones que hay
@@ -291,19 +312,21 @@ detrás de las reglas de seguridad:
 
 ## Lo que falta
 
-- **Los parsers se ejercitaron contra un solo establecimiento.** El pipeline
-  procesa de extremo a extremo los cinco archivos de 4° A de Escuela Santa Rosa
-  (RBD 5583) y los fixtures sintéticos reproducen esa estructura, pero un
-  segundo colegio puede traer variantes de encabezado todavía no vistas.
-  `scripts/ingesta_local.py` está pensado para esa vuelta: procesa un curso sin
-  desplegar nada y muestra el diagnóstico completo.
-- **El OCR de Document AI está declarado pero no conectado**: un informe
-  oficial escaneado falla con un diagnóstico claro, no con un informe vacío.
-- **`recs[].plus` se lee de la planilla**, como indica la guía §4, de una
-  columna de análisis que es opcional. La planilla de Escuela Santa Rosa no la
-  trae, así que ese bloque sale vacío en su informe. Varios de los textos del
-  informe 4° A de referencia parecen redactados a partir de los datos del
-  propio DIA (distractores, caída respecto del control JUMP); si esa
-  generación debe automatizarse, es un módulo aparte.
 - **La lógica de navegador no tiene tests automáticos.** `public/app.js` se
-  verificó a mano en Chromium; los 97 tests cubren el pipeline de Python.
+  verifica a mano en Chromium con el SDK simulado; los tests automáticos cubren
+  el pipeline de Python. Dos bugs del cliente llegaron a producción sin que
+  nada los atrapara. Es la deuda más importante.
+- **Un solo establecimiento probado.** Los parsers se ejercitaron contra 4° A
+  de Escuela Santa Rosa; un segundo colegio puede traer variantes de encabezado
+  no vistas. `scripts/ingesta_local.py` muestra el diagnóstico completo sin
+  desplegar.
+- **La política de ciclo de vida de Storage hay que aplicarla a mano** (arriba)
+  y decidir el plazo.
+- **`recs[].plus` sale vacío** cuando la planilla de recomendaciones no trae la
+  columna de análisis, como en Santa Rosa. Si ese bloque debe generarse
+  automáticamente a partir de los datos del DIA, es un módulo aparte.
+- **El OCR de PDF escaneados no existe.** Un informe oficial escaneado falla
+  con un diagnóstico claro, no con un informe vacío.
+- **Los documentos `cursos/{uid}_{lote}` que dejó la función retirada**
+  `registrar_subida` siguen en Firestore. No molestan —`listar_informes` los
+  omite— pero se pueden borrar desde la consola.

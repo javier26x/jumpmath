@@ -95,6 +95,16 @@ async function arrancar() {
   const bucket = storage.getStorage(app);
   const fns = functions.getFunctions(app, config.region);
 
+  // Con `firebase emulators:start` la aplicación debe hablar con los
+  // emuladores y no con el proyecto real; los puertos son los de firebase.json.
+  // Es opcional y explícito: detectar «localhost» rompería a quien sirva
+  // public/ en local contra producción.
+  if (config.emuladores) {
+    auth.connectAuthEmulator(sesion, "http://127.0.0.1:9099", { disableWarnings: true });
+    storage.connectStorageEmulator(bucket, "127.0.0.1", 9199);
+    functions.connectFunctionsEmulator(fns, "127.0.0.1", 5001);
+  }
+
   // Si se volvió de un acceso por redirección, hay que consumir el resultado
   // antes de decidir qué pintar; si no, el primer render diría "sin sesión".
   await auth.getRedirectResult(sesion).catch(reportarFallo);
@@ -293,7 +303,10 @@ function conectarBotonGenerar(functions, fns, usuario) {
     pista.textContent = "Leyendo el informe DIA y las planillas. Puede tardar un minuto.";
 
     try {
-      const generar = functions.httpsCallable(fns, "generar_informe");
+      // El SDK corta las callables a los 70 s por defecto; la función tiene
+      // 300. Un arranque en frío más un PDF largo pueden pasar de 70, y el
+      // docente vería «deadline exceeded» con la ingesta a medio hacer.
+      const generar = functions.httpsCallable(fns, "generar_informe", { timeout: 300_000 });
       const { data } = await generar({ loteId: loteId() });
       const avisos = data.avisos || [];
       // Los avisos se dejan en la app, debajo del visor: al volver siguen ahí.
@@ -303,7 +316,16 @@ function conectarBotonGenerar(functions, fns, usuario) {
       pista.textContent = "Informe generado.";
       loteActual = null; // la siguiente tanda va a otra carpeta
       await cargarListaInformes(functions, fns, usuario);
-      await abrirInforme(usuario, data.cursoId, avisos.length);
+      try {
+        await abrirInforme(usuario, data.cursoId, avisos.length);
+      } catch (error) {
+        // La ingesta ya terminó bien: el informe existe y está en la lista.
+        mostrarMensaje(
+          "El informe se generó, pero no se pudo abrir",
+          [error?.message || "Error desconocido.", "Ábralo desde la lista de informes."],
+          "var(--r)",
+        );
+      }
     } catch (error) {
       boton.disabled = false;
       boton.textContent = etiqueta;
@@ -401,8 +423,23 @@ async function cargarListaInformes(functions, fns, usuario) {
       .join("") +
     "</ul>";
   caja.querySelectorAll("button[data-curso]").forEach((boton) => {
-    boton.onclick = () => abrirInforme(usuario, boton.dataset.curso).catch(reportarFallo);
+    boton.onclick = () =>
+      reabrirInforme(functions, fns, usuario, boton.dataset.curso).catch(reportarFallo);
   });
+}
+
+/**
+ * Reabre un informe ya generado con los avisos de aquella ingesta.
+ *
+ * Los avisos son los supuestos que se tomaron —una columna asumida, una unidad
+ * sin registro— y valen tanto al reabrir como el día que se generó.
+ */
+async function reabrirInforme(functions, fns, usuario, cursoId) {
+  const obtener = functions.httpsCallable(fns, "obtener_informe");
+  const { data } = await obtener({ cursoId });
+  const avisos = data.avisos || [];
+  mostrarAvisos(avisos);
+  await abrirInforme(usuario, cursoId, avisos.length);
 }
 
 /** Los avisos no son errores: son los supuestos que tomó la ingesta. */

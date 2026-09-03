@@ -19,3 +19,7 @@ export const region = "us-east1";
 
 // Clave pública de reCAPTCHA v3 para App Check. `null` lo desactiva.
 export const appCheckSiteKey = null;
+
+// Con `true`, la aplicación habla con la Emulator Suite local (puertos de
+// firebase.json) en vez de con el proyecto. Sólo para desarrollo.
+export const emuladores = false;
